@@ -672,6 +672,70 @@ public class RoadRunnerService extends Service implements LocationListener {
 		r.addVertex(42.36017714123914, -71.09434785515595);
 		rs.add(r);
 
+		// Windsor-1
+		r = new Region(2L);
+		r.addVertex(42.36171115038648, -71.09712662369537);
+		r.addVertex(42.36303504548448, -71.09696569115448);
+		r.addVertex(42.36297955343571, -71.09649362236786);
+		r.addVertex(42.3615288153431, -71.09665455490875);
+		rs.add(r);
+
+		// Mass-1
+		r = new Region(2L);
+		r.addVertex(42.36171115038648, -71.09712662369537);
+		r.addVertex(42.36303504548448, -71.09696569115448);
+		r.addVertex(42.36297955343571, -71.09649362236786);
+		r.addVertex(42.3615288153431, -71.09665455490875);
+		rs.add(r);
+
+		// Mass-2
+		r = new Region(2L);
+		r.addVertex(42.36078361444815, -71.09561385781097);
+		r.addVertex(42.36035551632001, -71.09481992394257);
+		r.addVertex(42.36015732175445, -71.09521689087677);
+		r.addVertex(42.36060127671314, -71.09606446892548);
+		rs.add(r);
+
+		// Albany-1
+		r = new Region(1L);
+		r.addVertex(42.36078361444815, -71.09561385781097);
+		r.addVertex(42.36035551632001, -71.09481992394257);
+		r.addVertex(42.36015732175445, -71.09521689087677);
+		r.addVertex(42.36060127671314, -71.09606446892548);
+		rs.add(r);
+
+		// Albany-2
+		r = new Region(1L);
+		r.addVertex(42.36078361444815, -71.09561385781097);
+		r.addVertex(42.36035551632001, -71.09481992394257);
+		r.addVertex(42.36015732175445, -71.09521689087677);
+		r.addVertex(42.36060127671314, -71.09606446892548);
+		rs.add(r);
+
+		// Portland-1
+		r = new Region(1L);
+		r.addVertex(42.36194897790869, -71.09416546494293);
+		r.addVertex(42.36278136714719, -71.09392943054962);
+		r.addVertex(42.36278136714719, -71.09337153107452);
+		r.addVertex(42.36224229727962, -71.09347881943512);
+		rs.add(r);
+
+		// Main-1
+		r = new Region(2L);
+		r.addVertex(42.36336799674776, -71.0964828935318);
+		r.addVertex(42.36320152133667, -71.09387578636932);
+		r.addVertex(42.362836859370994, -71.09394015938568);
+		r.addVertex(42.36301126318386, -71.09651508003998);
+		rs.add(r);
+
+		// Main-2
+		r = new Region(2L);
+		r.addVertex(42.36309053748424, -71.0933500734024);
+		r.addVertex(42.36301919061839, -71.09215917259979);
+		r.addVertex(42.36274172981449, -71.09223427445221);
+		r.addVertex(42.36278929461076, -71.09336080223846);
+		rs.add(r);
+
 		// Main-3
 		r = new Region(2L);
 		r.addVertex(42.360438757851156, -71.09472336441803);
@@ -697,7 +761,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 
 	public synchronized void stop() {
 		log("Stopping service...");
-		
+
 		myHandler.removeCallbacks(adhocAnnounceR);
 		myHandler.removeCallbacks(cloudDirectRequestCheck);
 
