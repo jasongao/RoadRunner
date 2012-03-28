@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical" >
+
+    <LinearLayout
+        android:id="@+id/StatusInfoLabelsLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
+
+        <TextView
+            android:id="@+id/region_label_tv"
+            android:layout_width="90dip"
+            android:layout_height="wrap_content"
+            android:text="Road" >
+        </TextView>
+
+        <TextView
+            android:id="@+id/reservations_label_tv"
+            android:layout_width="110dip"
+            android:layout_height="wrap_content"
+            android:text="Got tokens for" >
+        </TextView>
+
+        <TextView
+            android:id="@+id/extras_label_tv"
+            android:layout_width="110dip"
+            android:layout_height="wrap_content"
+            android:text="Got extras for" >
+        </TextView>
+    </LinearLayout>
+    
+    <LinearLayout
+        android:id="@+id/StatusInfoLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
+
+        <TextView
+            android:id="@+id/region_tv"
+            android:layout_width="90dip"
+            android:layout_height="wrap_content"
+            android:text="Free Zone" >
+        </TextView>
+
+        <TextView
+            android:id="@+id/reservations_tv"
+            android:layout_width="110dip"
+            android:layout_height="wrap_content"
+            android:text="[]" >
+        </TextView>
+
+        <TextView
+            android:id="@+id/extras_tv"
+            android:layout_width="110dip"
+            android:layout_height="wrap_content"
+            android:text="[]" >
+        </TextView>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/ButtonsLayout"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal" >
+
+        <Button
+            android:id="@+id/reserve_button_a"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:text="Route A" />
+
+        <Button
+            android:id="@+id/reserve_button_b"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:text="Route B" />
+
+        <Button
+            android:id="@+id/reserve_button_c"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:text="Route C" />
+    </LinearLayout>
+
+    <ListView
+        android:id="@+id/msgList"
+        android:layout_width="fill_parent"
+        android:layout_height="0dip"
+        android:layout_weight="1"
+        android:stackFromBottom="true"
+        android:transcriptMode="alwaysScroll" >
+    </ListView>
+
+    <LinearLayout
+        android:id="@+id/ButtonsLayout"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal" >
+
+        <Button
+            android:id="@+id/connect_button"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:text="Start RoadRunner" />
+
+        <Button
+            android:id="@+id/reset_button"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:text="Reset Cloud" />
+    </LinearLayout>
+
+</LinearLayout>
