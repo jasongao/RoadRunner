@@ -48,7 +48,6 @@ public class AdhocServerThread extends Thread {
 				mySocket.close();
 				socketOK = false;
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 	}

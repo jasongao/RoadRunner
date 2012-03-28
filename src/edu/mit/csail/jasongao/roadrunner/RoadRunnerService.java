@@ -58,14 +58,14 @@ public class RoadRunnerService extends Service implements LocationListener {
 	private List<Region> regions;
 
 	private Location mLoc;
-	private long mRegion = -1;
+	private String mRegion = "FREE";
 	private long mId = -1000;
 
 	/** Reservations we are using/will use. Map regionId to done ResRequest */
-	private Map<Long, ResRequest> reservationsInUse;
+	private Map<String, ResRequest> reservationsInUse;
 
 	/** Reservations we can give away */
-	public Map<Long, ConcurrentLinkedQueue<ResRequest>> reservationsOffered;
+	public Map<String, ConcurrentLinkedQueue<ResRequest>> reservationsOffered;
 
 	/** Pending GET RES_REQUESTS that can be sent to either cloud or to adhoc */
 	private Queue<ResRequest> getsPending;
@@ -179,7 +179,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 
 					// try to get token from other vehicle?
 					if (other.tokensOffered.contains(req.regionId)) {
-						log(String.format("Other vehicle %d offers %s, GET %d",
+						log(String.format("Other vehicle %d offers %s, GET %s",
 								other.src, other.tokensOffered, req.regionId));
 						it.remove(); // fix ConcurrentModificationException
 						new ResRequestTask().execute(req, "192.168.42."
@@ -230,7 +230,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 				// Dispatch request correctly
 				switch (req.type) {
 				case ResRequest.RES_GET:
-					writer.write(String.format("GET %d %d\r\n", mId,
+					writer.write(String.format("GET %d %s\r\n", mId,
 							req.regionId));
 					writer.flush();
 
@@ -266,7 +266,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 					}
 					break;
 				case ResRequest.RES_PUT:
-					writer.write(String.format("PUT %d %d\r\n", mId,
+					writer.write(String.format("PUT %d %s\r\n", mId,
 							req.regionId));
 					writer.flush();
 
@@ -280,7 +280,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 					}
 					break;
 				case ResRequest.DEBUG_RESET:
-					writer.write(String.format("DEBUG-RESET %d %d\r\n", mId,
+					writer.write(String.format("DEBUG-RESET %d %s\r\n", mId,
 							req.regionId));
 					writer.flush();
 					log("Response: " + reader.readLine());
@@ -308,7 +308,9 @@ public class RoadRunnerService extends Service implements LocationListener {
 			}
 
 			long stopTime = System.currentTimeMillis();
-			log(String.format("Request task took %d ms.", stopTime - startTime));
+			log(String.format(
+					"GET request on %s network access completed in %d ms",
+					req.regionId, stopTime - startTime));
 
 			return req;
 		}
@@ -322,9 +324,9 @@ public class RoadRunnerService extends Service implements LocationListener {
 				/* GET SUCCESSFUL */
 				if (req.done) {
 					req.completed = System.currentTimeMillis();
-					log(String
-							.format("GET request on regionId %d successful, took %d ms",
-									req.regionId, req.completed - req.created));
+					log(String.format(
+							"GET request on %s successful, after %d ms",
+							req.regionId, req.completed - req.created));
 					/* Use reservation if we don't have it, otherwise extras */
 					if (!reservationsInUse.containsKey(req.regionId)) {
 						reservationsInUse.put(req.regionId, req);
@@ -337,7 +339,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 						}
 						reservationsOffered.get(req.regionId).add(req);
 						log(String.format(
-								"Added to reservationsOffered(%d): %s",
+								"Added to reservationsOffered(%s): %s",
 								req.regionId,
 								reservationsOffered.get(req.regionId)));
 					}
@@ -345,7 +347,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 				/* GET FAILED */
 				else {
 					log(String
-							.format("GET request on regionId %d failed, adding back to pending queue.",
+							.format("GET request on %s failed, adding back to pending queue.",
 									req.regionId));
 					getsPending.add(req);
 				}
@@ -355,15 +357,15 @@ public class RoadRunnerService extends Service implements LocationListener {
 				/* PUT SUCCESSFUL */
 				if (req.done) {
 					req.completed = System.currentTimeMillis();
-					log(String
-							.format("PUT request on regionId %d successful, took %d ms",
-									req.regionId, req.completed - req.created));
+					log(String.format(
+							"PUT request on %s successful, took %d ms",
+							req.regionId, req.completed - req.created));
 				}
 				/* PUT FAILED */
 				else {
-					log(String
-							.format("PUT request on regionId %d failed, adding back to offers.",
-									req.regionId));
+					log(String.format(
+							"PUT request on %s failed, adding back to offers.",
+							req.regionId));
 					// Reset request time
 					req.created = System.currentTimeMillis();
 					reservationsOffered.get(req.regionId).add(req);
@@ -409,7 +411,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 			p.dataActivity = tm.getDataActivity();
 
 			// AdhocAnnounce what tokens we are offering
-			p.tokensOffered = new HashSet<Long>(reservationsOffered.keySet());
+			p.tokensOffered = new HashSet<String>(reservationsOffered.keySet());
 
 			new SendPacketsTask().execute(p);
 			myHandler.postDelayed(this, Globals.ADHOC_ANNOUNCE_PERIOD);
@@ -452,11 +454,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 
 	public void updateDisplay() {
 		List<String> update = new ArrayList<String>();
-		if (this.mRegion == -1) {
-			update.add("Free Zone");
-		} else {
-			update.add(String.format("%d", this.mRegion));
-		}
+		update.add(String.format("%s", this.mRegion));
 		update.add(String.format("%s", this.reservationsInUse.keySet()));
 		update.add(String.format("%s", this.reservationsOffered.keySet()));
 		mainHandler.obtainMessage(MainActivity.UPDATE_DISPLAY, update)
@@ -469,13 +467,13 @@ public class RoadRunnerService extends Service implements LocationListener {
 
 	public void resetCloud() {
 		log(String.format("Sending ResRequest for DEBUG-RESET"));
-		ResRequest r1 = new ResRequest(mId, ResRequest.DEBUG_RESET, 1);
+		ResRequest r1 = new ResRequest(mId, ResRequest.DEBUG_RESET, "Vassar-1");
 		new ResRequestTask().execute(r1, Globals.CLOUD_HOST);
 	}
 
 	public void makeReservationRouteA() {
 		log(String.format("Adding ResRequests for route A"));
-		ResRequest r1 = new ResRequest(mId, ResRequest.RES_GET, 1);
+		ResRequest r1 = new ResRequest(mId, ResRequest.RES_GET, "Vassar-1");
 		r1.softDeadline = r1.created + Globals.REQUEST_SOFT_DEADLINE_FROM_NOW;
 		r1.hardDeadline = r1.created + Globals.REQUEST_HARD_DEADLINE_FROM_NOW;
 		getsPending.add(r1);
@@ -483,7 +481,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 
 	public void makeReservationRouteB() {
 		log(String.format("Adding ResRequests for route B"));
-		ResRequest r1 = new ResRequest(mId, ResRequest.RES_GET, 1);
+		ResRequest r1 = new ResRequest(mId, ResRequest.RES_GET, "Vassar-1");
 		r1.softDeadline = r1.created + Globals.REQUEST_SOFT_DEADLINE_FROM_NOW;
 		r1.hardDeadline = r1.created + Globals.REQUEST_HARD_DEADLINE_FROM_NOW;
 		getsPending.add(r1);
@@ -491,7 +489,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 
 	public void makeReservationRouteC() {
 		log(String.format("Adding ResRequests for route C"));
-		ResRequest r1 = new ResRequest(mId, ResRequest.RES_GET, 1);
+		ResRequest r1 = new ResRequest(mId, ResRequest.RES_GET, "Vassar-1");
 		r1.softDeadline = r1.created + Globals.REQUEST_SOFT_DEADLINE_FROM_NOW;
 		r1.hardDeadline = r1.created + Globals.REQUEST_HARD_DEADLINE_FROM_NOW;
 		getsPending.add(r1);
@@ -594,11 +592,11 @@ public class RoadRunnerService extends Service implements LocationListener {
 		mId = aat.getLocalAddress().getAddress()[3];
 
 		// Set up regions
-		this.regions = stataRegions();
+		this.regions = experimentARegions();
 
 		// Initialize state
-		this.reservationsOffered = new ConcurrentHashMap<Long, ConcurrentLinkedQueue<ResRequest>>();
-		this.reservationsInUse = new ConcurrentHashMap<Long, ResRequest>();
+		this.reservationsOffered = new ConcurrentHashMap<String, ConcurrentLinkedQueue<ResRequest>>();
+		this.reservationsInUse = new ConcurrentHashMap<String, ResRequest>();
 		this.getsPending = new ConcurrentLinkedQueue<ResRequest>();
 		this.putsPending = new ConcurrentLinkedQueue<ResRequest>();
 
@@ -616,7 +614,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 		Region r;
 
 		// Region 1
-		r = new Region(1L);
+		r = new Region("Stata-1");
 		r.addVertex(42.36218276352746, -71.08994364738464);
 		r.addVertex(42.36207970542849, -71.08879566192627);
 		r.addVertex(42.36181809564884, -71.08882784843445);
@@ -624,7 +622,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 		rs.add(r);
 
 		// Region 2
-		r = new Region(2L);
+		r = new Region("Stata-2");
 		r.addVertex(42.36184980598321, -71.08983635902405);
 		r.addVertex(42.36181809564884, -71.08882784843445);
 		r.addVertex(42.361556484779946, -71.08887076377869);
@@ -632,7 +630,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 		rs.add(r);
 
 		// Region 3
-		r = new Region(3L);
+		r = new Region("Stata-3");
 		r.addVertex(42.36158819524629, -71.08986854553223);
 		r.addVertex(42.361556484779946, -71.08887076377869);
 		r.addVertex(42.36131865577206, -71.08895659446716);
@@ -644,17 +642,17 @@ public class RoadRunnerService extends Service implements LocationListener {
 		l = new Location("");
 		l.setLatitude(42.36196871959442);
 		l.setLongitude(-71.0893964767456);
-		log(String.format("Test point 1 is in region %d", getRegion(rs, l)));
+		log(String.format("Test point 1 is in region %s", getRegion(rs, l)));
 
 		l = new Location("");
 		l.setLatitude(42.361659543737126);
 		l.setLongitude(-71.0893964767456);
-		log(String.format("Test point 2 is in region %d", getRegion(rs, l)));
+		log(String.format("Test point 2 is in region %s", getRegion(rs, l)));
 
 		l = new Location("");
 		l.setLatitude(42.36140585984613);
 		l.setLongitude(-71.0893964767456);
-		log(String.format("Test point 3 is in region %d", getRegion(rs, l)));
+		log(String.format("Test point 3 is in region %s", getRegion(rs, l)));
 
 		return rs;
 	}
@@ -665,90 +663,194 @@ public class RoadRunnerService extends Service implements LocationListener {
 		Region r;
 
 		// Vassar St
-		r = new Region(1L);
-		r.addVertex(42.360438757851156, -71.09472336441803);
-		r.addVertex(42.36252372403751, -71.09044255883026);
-		r.addVertex(42.362396883964664, -71.08983101517487);
-		r.addVertex(42.36017714123914, -71.09434785515595);
+		r = new Region("Vassar-1");
+		r.addVertex(42.36255147026933, -71.09034599930573);
+		r.addVertex(42.36240877523236, -71.08975591332245);
+		r.addVertex(42.36013353836458, -71.09434785515595);
+		r.addVertex(42.360442721730834, -71.0948091951065);
 		rs.add(r);
 
 		// Windsor-1
-		r = new Region(2L);
-		r.addVertex(42.36171115038648, -71.09712662369537);
-		r.addVertex(42.36303504548448, -71.09696569115448);
-		r.addVertex(42.36297955343571, -71.09649362236786);
-		r.addVertex(42.3615288153431, -71.09665455490875);
+		r = new Region("Windsor-1");
+		r.addVertex(42.36302711805193, -71.09707297951508);
+		r.addVertex(42.36297955343571, -71.09641852051544);
+		r.addVertex(42.3615288153431, -71.09657945305634);
+		r.addVertex(42.36186970216797, -71.09723391205597);
 		rs.add(r);
 
 		// Mass-1
-		r = new Region(2L);
-		r.addVertex(42.36171115038648, -71.09712662369537);
-		r.addVertex(42.36303504548448, -71.09696569115448);
-		r.addVertex(42.36297955343571, -71.09649362236786);
-		r.addVertex(42.3615288153431, -71.09665455490875);
+		r = new Region("Mass-1");
+		r.addVertex(42.36114036066024, -71.09588207871246);
+		r.addVertex(42.360791542163774, -71.09660091072845);
+		r.addVertex(42.36106901157985, -71.0969335046463);
+		r.addVertex(42.36156052582344, -71.09657945305634);
 		rs.add(r);
 
 		// Mass-2
-		r = new Region(2L);
-		r.addVertex(42.36078361444815, -71.09561385781097);
-		r.addVertex(42.36035551632001, -71.09481992394257);
-		r.addVertex(42.36015732175445, -71.09521689087677);
-		r.addVertex(42.36060127671314, -71.09606446892548);
+		r = new Region("Mass-2");
+		r.addVertex(42.36035551632001, -71.09489502579498);
+		r.addVertex(42.3601731773427, -71.09523834854889);
+		r.addVertex(42.360577493491306, -71.095978638237);
+		r.addVertex(42.36077568673155, -71.0955816713028);
 		rs.add(r);
 
 		// Albany-1
-		r = new Region(1L);
-		r.addVertex(42.36078361444815, -71.09561385781097);
-		r.addVertex(42.36035551632001, -71.09481992394257);
-		r.addVertex(42.36015732175445, -71.09521689087677);
-		r.addVertex(42.36060127671314, -71.09606446892548);
+		r = new Region("Albany-1");
+		r.addVertex(42.36172700558263, -71.09442295700836);
+		r.addVertex(42.3614891772202, -71.09410109192658);
+		r.addVertex(42.360823253016186, -71.09553875595856);
+		r.addVertex(42.361084866938036, -71.09590353638458);
 		rs.add(r);
 
 		// Albany-2
-		r = new Region(1L);
-		r.addVertex(42.36078361444815, -71.09561385781097);
-		r.addVertex(42.36035551632001, -71.09481992394257);
-		r.addVertex(42.36015732175445, -71.09521689087677);
-		r.addVertex(42.36060127671314, -71.09606446892548);
+		r = new Region("Albany-2");
+		r.addVertex(42.362678310030105, -71.09243812233734);
+		r.addVertex(42.36253561528121, -71.09191240937042);
+		r.addVertex(42.36180628150339, -71.09342517525482);
+		r.addVertex(42.36223436974708, -71.09344663292694);
 		rs.add(r);
 
 		// Portland-1
-		r = new Region(1L);
-		r.addVertex(42.36194897790869, -71.09416546494293);
-		r.addVertex(42.36278136714719, -71.09392943054962);
-		r.addVertex(42.36278136714719, -71.09337153107452);
-		r.addVertex(42.36224229727962, -71.09347881943512);
+		r = new Region("Portland-1");
+		r.addVertex(42.362757584750575, -71.09386505753326);
+		r.addVertex(42.36273380234492, -71.09342517525482);
+		r.addVertex(42.36217887699113, -71.09354319245148);
+		r.addVertex(42.36198861574153, -71.09409036309052);
 		rs.add(r);
 
 		// Main-1
-		r = new Region(2L);
-		r.addVertex(42.36336799674776, -71.0964828935318);
-		r.addVertex(42.36320152133667, -71.09387578636932);
-		r.addVertex(42.362836859370994, -71.09394015938568);
-		r.addVertex(42.36301126318386, -71.09651508003998);
+		r = new Region("Main-1");
+		r.addVertex(42.36318566651262, -71.09384359986115);
+		r.addVertex(42.36278929461076, -71.09392943054962);
+		r.addVertex(42.36297162599619, -71.09643997818756);
+		r.addVertex(42.36336799674776, -71.09641852051544);
 		rs.add(r);
 
 		// Main-2
-		r = new Region(2L);
-		r.addVertex(42.36309053748424, -71.0933500734024);
-		r.addVertex(42.36301919061839, -71.09215917259979);
-		r.addVertex(42.36274172981449, -71.09223427445221);
-		r.addVertex(42.36278929461076, -71.09336080223846);
+		r = new Region("Main-2");
+		r.addVertex(42.36300333574834, -71.09216990143585);
+		r.addVertex(42.36271794740286, -71.09249176651764);
+		r.addVertex(42.36277343968266, -71.09333934456635);
+		r.addVertex(42.363106392332284, -71.09324278504181);
 		rs.add(r);
 
 		// Main-3
-		r = new Region(2L);
-		r.addVertex(42.360438757851156, -71.09472336441803);
-		r.addVertex(42.36252372403751, -71.09044255883026);
-		r.addVertex(42.362396883964664, -71.08983101517487);
-		r.addVertex(42.36017714123914, -71.09434785515595);
+		r = new Region("Main-3");
+		r.addVertex(42.36289235154579, -71.09035672814178);
+		r.addVertex(42.36259110772208, -71.09038891464996);
+		r.addVertex(42.36264660011392, -71.09166564614105);
+		r.addVertex(42.36303504548448, -71.09157981545258);
 		rs.add(r);
+
+		Location l;
+
+		l = new Location("");
+		l.setLatitude(42.36035940296916);
+		l.setLongitude(-71.0944926738739);
+		log(String.format("Test point on Vassar is in region %s",
+				getRegion(rs, l)));
+
+		l = new Location("");
+		l.setLatitude(42.36081921192526);
+		l.setLongitude(-71.09338760375977);
+		log(String.format("Test point on Vassar is in region %s",
+				getRegion(rs, l)));
+
+		l = new Location("");
+		l.setLatitude(42.36160405047349);
+		l.setLongitude(-71.0919177532196);
+		log(String.format("Test point on Vassar is in region %s",
+				getRegion(rs, l)));
+
+		l = new Location("");
+		l.setLatitude(42.3619370093201);
+		l.setLongitude(-71.09123110771179);
+		log(String.format("Test point on Vassar is in region %s",
+				getRegion(rs, l)));
+
+		l = new Location("");
+		l.setLatitude(42.36234924163794);
+		l.setLongitude(-71.09039425849915);
+		log(String.format("Test point on Vassar is in region %s",
+				getRegion(rs, l)));
+
+		l = new Location("");
+		l.setLatitude(42.3631736981596);
+		l.setLongitude(-71.09626293182373);
+		log(String.format("Test point on Main-1 is in region %s",
+				getRegion(rs, l)));
+
+		l = new Location("");
+		l.setLatitude(42.36303893196785);
+		l.setLongitude(-71.09436392784119);
+		log(String.format("Test point on Main-1 is in region %s",
+				getRegion(rs, l)));
+
+		l = new Location("");
+		l.setLatitude(42.362935875273244);
+		l.setLongitude(-71.09288334846497);
+		log(String.format("Test point on Main-2 is in region %s",
+				getRegion(rs, l)));
+
+		l = new Location("");
+		l.setLatitude(42.362785253646265);
+		l.setLongitude(-71.09100580215454);
+		log(String.format("Test point on Main-3 is in region %s",
+				getRegion(rs, l)));
+
+		l = new Location("");
+		l.setLatitude(42.362476081807);
+		l.setLongitude(-71.0936987400055);
+		log(String.format("Test point on Portland-1 is in region %s",
+				getRegion(rs, l)));
+
+		l = new Location("");
+		l.setLatitude(42.36099362133876);
+		l.setLongitude(-71.09561920166016);
+		log(String.format("Test point on Albany-1 is in region %s",
+				getRegion(rs, l)));
+
+		l = new Location("");
+		l.setLatitude(42.36154855716084);
+		l.setLongitude(-71.0943853855133);
+		log(String.format("Test point on Albany-1 is in region %s",
+				getRegion(rs, l)));
+
+		l = new Location("");
+		l.setLatitude(42.362008357414815);
+		l.setLongitude(-71.093430519104);
+		log(String.format("Test point on Albany-2 is in region %s",
+				getRegion(rs, l)));
+
+		l = new Location("");
+		l.setLatitude(42.362610849206014);
+		l.setLongitude(-71.09221816062927);
+		log(String.format("Test point on Albany-2 is in region %s",
+				getRegion(rs, l)));
+
+		l = new Location("");
+		l.setLatitude(42.3611521749309);
+		l.setLongitude(-71.09653115272522);
+		log(String.format("Test point on Mass-1 is in region %s",
+				getRegion(rs, l)));
+
+		l = new Location("");
+		l.setLatitude(42.3604862471552);
+		l.setLongitude(-71.09537243843079);
+		log(String.format("Test point on Mass-2 is in region %s",
+				getRegion(rs, l)));
+
+		l = new Location("");
+		l.setLatitude(42.36238887921827);
+		l.setLongitude(-71.09683156013489);
+		log(String.format("Test point on Windsor-1 is in region %s",
+				getRegion(rs, l)));
 
 		return rs;
 	}
 
 	// http://stackoverflow.com/questions/1066589/java-iterate-through-hashmap
-	private long getRegion(List<Region> rs, Location loc) {
+	private String getRegion(List<Region> rs, Location loc) {
 		Iterator<Region> it = rs.iterator();
 		while (it.hasNext()) {
 			Region r = (Region) it.next();
@@ -756,7 +858,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 				return r.id;
 			}
 		}
-		return -1;
+		return "FREE";
 	}
 
 	public synchronized void stop() {
@@ -788,8 +890,8 @@ public class RoadRunnerService extends Service implements LocationListener {
 		this.mLoc = loc;
 
 		// did we enter a new region?
-		long oldRegion = this.mRegion;
-		long newRegion = getRegion(this.regions, loc);
+		String oldRegion = this.mRegion;
+		String newRegion = getRegion(this.regions, loc);
 		if (newRegion == oldRegion) {
 			return; // do nothing if we haven't changed regions
 		}
@@ -802,24 +904,24 @@ public class RoadRunnerService extends Service implements LocationListener {
 		}
 
 		// region transition, so check for reservation if necessary
-		if (newRegion == -1) {
+		if ("FREE".equals(newRegion)) {
 			log(String
-					.format("Moved from region %d to %d with GPS fix %s, no reservation needed.",
+					.format("Moved from %s to %s with GPS fix %s, no reservation needed.",
 							oldRegion, newRegion, loc));
 		} else if (this.reservationsInUse.containsKey(newRegion)) {
 			log(String
-					.format("Moved from region %d to %d with GPS fix %s, reservation from in-use store.",
+					.format("Moved from %s to %s with GPS fix %s, reservation from in-use store.",
 							oldRegion, newRegion, loc));
 		} else if (this.reservationsOffered.containsKey(newRegion)
 				&& this.reservationsOffered.get(newRegion).size() != 0) {
 			log(String
-					.format("Moved from region %d to %d with GPS fix %s, reservation from offer store.",
+					.format("Moved from %s to %s with GPS fix %s, reservation from offer store.",
 							oldRegion, newRegion, loc));
 			ResRequest res = this.reservationsInUse.remove(oldRegion);
 			this.reservationsInUse.put(newRegion, res);
 		} else {
 			log(String
-					.format("Moved from region %d to %d with GPS fix %s, missing reservation, PENALTY.",
+					.format("Moved from %s to %s with GPS fix %s, missing reservation, PENALTY.",
 							oldRegion, newRegion, loc));
 		}
 

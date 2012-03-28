@@ -14,7 +14,8 @@ public class ResRequest implements Serializable {
 
 	/** Always populated */
 	public int type;
-	public long created, completed, src, regionId;
+	public long created, completed, src;
+	public String regionId;
 	public long softDeadline;
 	public long hardDeadline;
 	public boolean done;
@@ -24,7 +25,7 @@ public class ResRequest implements Serializable {
 	public String tokenString;
 	public String signature;
 
-	public ResRequest(long srcId_, int type_, int regionId_) {
+	public ResRequest(long srcId_, int type_, String regionId_) {
 		this.created = System.currentTimeMillis();
 		this.src = srcId_;
 		this.type = type_;
@@ -39,29 +40,22 @@ public class ResRequest implements Serializable {
 			return true;
 
 		// Check expiration
-		if (System.currentTimeMillis() > expires) {
+		long now = System.currentTimeMillis();
+		if (now > expires) {
 			return false;
+		} else { // TODO Verify signature
+			String tokenString = String.format("%s %d %d", regionId, issued,
+					expires);
+			byte[] byteArray1 = null;
+			byte[] byteArray2 = null;
+			return Arrays.equals(byteArray1, byteArray2);
 		}
-
-		// Verify signature
-		String tokenString = String.format(
-				"{\"issued\": %d, \"regionId\": %d, \"expires\": %d}", issued,
-				regionId, expires);
-		// TODO
-
-		byte[] byteArray1 = null;
-		byte[] byteArray2 = null;
-
-		if (Arrays.equals(byteArray1, byteArray2)) {
-			return true;
-		}
-
-		return false;
 	}
 
 	@Override
 	public String toString() {
-		return String.format("ResRequest[src=%d, regionId=%d, type=%d, done=%b]", src,
+		return String.format(
+				"ResRequest[src=%d, regionId=%s, type=%d, done=%b]", src,
 				regionId, type, done);
 	}
 }

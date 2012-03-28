@@ -50,7 +50,7 @@ public class AdhocServerConnection implements Runnable {
 
 			String method = parts[0];
 			long otherId = Long.parseLong(parts[1]);
-			long regionId = Long.parseLong(parts[2]);
+			String regionId = parts[2];
 			String response;
 
 			if (method != null && method.equals("GET")) {
@@ -89,7 +89,7 @@ public class AdhocServerConnection implements Runnable {
 								cloudSocket.getOutputStream());
 
 						// Send the original GET request
-						String line = String.format("GET %d %d\r\n", otherId,
+						String line = String.format("GET %d %s\r\n", otherId,
 								regionId);
 						cloudWriter.write(line);
 						cloudWriter.flush();

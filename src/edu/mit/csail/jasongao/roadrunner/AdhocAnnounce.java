@@ -18,7 +18,7 @@ public class AdhocAnnounce implements Serializable {
 	private double lat, lng;
 	private float speed, bearing;
 
-	public Set<Long> tokensOffered; // Regions for which I am offering t's
+	public Set<String> tokensOffered; // Regions for which I am offering t's
 	public int dataActivity = -1; // dataActivity state from TelephonyManager
 
 	public AdhocAnnounce(long src_, Location loc) {
@@ -62,8 +62,8 @@ public class AdhocAnnounce implements Serializable {
 
 	@Override
 	public String toString() {
-		return String.format(
-				"AdhocAnnounce[src=%d, lng=%f, lat=%f, spd=%f, bearing=%f, offers=%s]", src,
-				lng, lat, speed, bearing, tokensOffered);
+		return String
+				.format("AdhocAnnounce[src=%d, lng=%f, lat=%f, spd=%f, bearing=%f, offers=%s]",
+						src, lng, lat, speed, bearing, tokensOffered);
 	}
 }

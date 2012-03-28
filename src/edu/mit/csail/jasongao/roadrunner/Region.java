@@ -7,18 +7,13 @@ import android.location.Location;
 
 public class Region {
 	
-	public long id;
+	public String id;
 	
 	public List<Location> vertices;
 	
-	public Region(long id_) {
+	public Region(String id_) {
 		this.id = id_;
 		vertices = new ArrayList<Location>();
-	}
-
-	public Region(long id_, List<Location> vertices_) {
-		this.id = id_;
-		vertices = vertices_;
 	}
 	
 	public void addVertex(double latitude, double longitude) {

@@ -13,21 +13,21 @@
             android:id="@+id/region_label_tv"
             android:layout_width="90dip"
             android:layout_height="wrap_content"
-            android:text="Road" >
+            android:text="Zone" >
         </TextView>
 
         <TextView
             android:id="@+id/reservations_label_tv"
             android:layout_width="110dip"
             android:layout_height="wrap_content"
-            android:text="Got tokens for" >
+            android:text="In-use" >
         </TextView>
 
         <TextView
             android:id="@+id/extras_label_tv"
             android:layout_width="110dip"
             android:layout_height="wrap_content"
-            android:text="Got extras for" >
+            android:text="Offering" >
         </TextView>
     </LinearLayout>
     
