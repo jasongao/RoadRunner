@@ -44,6 +44,7 @@ public class MainActivity extends Activity {
 	 ***********************************************/
 
 	// Handler message types
+	protected final static int LOG_NODISPLAY = 2;
 	protected final static int LOG = 3;
 	protected final static int UPDATE_DISPLAY = 4;
 
@@ -54,6 +55,9 @@ public class MainActivity extends Activity {
 			switch (msg.what) {
 			case LOG: // Write a string to log file and UI log display
 				log((String) msg.obj);
+				break;
+			case LOG_NODISPLAY: // Write a string to log file and UI log display
+				log_nodisplay((String) msg.obj);
 				break;
 			case UPDATE_DISPLAY: // Update status display TextViews
 				List<String> update = (ArrayList<String>) msg.obj;
@@ -76,6 +80,15 @@ public class MainActivity extends Activity {
 		line = String.format("%d: %s", System.currentTimeMillis(), line);
 		Log.i(TAG, line);
 		receivedMessages.add((String) line);
+		if (logWriter != null) {
+			logWriter.println((String) line);
+		}
+	}
+	
+	/** Log message only to file. */
+	public void log_nodisplay(String line) {
+		line = String.format("%d: %s", System.currentTimeMillis(), line);
+		Log.i(TAG, line);
 		if (logWriter != null) {
 			logWriter.println((String) line);
 		}

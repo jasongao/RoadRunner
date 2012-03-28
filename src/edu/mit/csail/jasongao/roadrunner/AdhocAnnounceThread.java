@@ -17,6 +17,7 @@ public class AdhocAnnounceThread extends Thread {
 	private static final String TAG = "AdhocAnnounceThread";
 
 	private Handler parentHandler;
+	private RoadRunnerService rrs;
 
 	private DatagramSocket mySocket;
 	private boolean socketOK = false;
@@ -30,8 +31,9 @@ public class AdhocAnnounceThread extends Thread {
 	}
 
 	/** AdhocAnnounceThread constructor */
-	public AdhocAnnounceThread(Handler p) {
-		parentHandler = p;
+	public AdhocAnnounceThread(Handler p_, RoadRunnerService rrs_) {
+		this.parentHandler = p_;
+		this.rrs = rrs_;
 
 		myIPAddress = null;
 		try {

@@ -10,10 +10,6 @@ import android.util.Log;
 public class AdhocServerThread extends Thread {
 	private static final String TAG = "AdhocServerThread";
 
-	private void log(String message) {
-		rrs.log(message);
-	}
-
 	private Handler parentHandler;
 	private RoadRunnerService rrs;
 
@@ -52,7 +48,7 @@ public class AdhocServerThread extends Thread {
 			}
 	}
 
-	/** Thread's receive loop for UDP packets */
+	/** Thread's run loop */
 	@Override
 	public void run() {
 		ServerSocket s = mySocket;
@@ -70,6 +66,6 @@ public class AdhocServerThread extends Thread {
 			socketOK = false;
 		}
 
-		log("AdhocServerThread exiting.");
+		rrs.log("AdhocServerThread exiting.");
 	} // end run()
 }

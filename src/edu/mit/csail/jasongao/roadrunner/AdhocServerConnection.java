@@ -14,10 +14,6 @@ import android.util.Log;
 public class AdhocServerConnection implements Runnable {
 	public static final String TAG = "AdhocServerConnection";
 
-	private void log(String message) {
-		rrs.log(message);
-	}
-
 	private Socket mSocket;
 	private long id;
 	private RoadRunnerService rrs;
@@ -43,7 +39,7 @@ public class AdhocServerConnection implements Runnable {
 			// log("Received request: " + request);
 			String[] parts = request.split(" ");
 			if (parts.length != 3) {
-				log("Improperly formatted request line, exiting...");
+				rrs.log("Improperly formatted request line, exiting...");
 				mSocket.close();
 				return;
 			}
@@ -65,7 +61,7 @@ public class AdhocServerConnection implements Runnable {
 						rrs.reservationsOffered.remove(regionId);
 					}
 
-					log("Responding to request with an offered reservation.");
+					rrs.log("Responding to GET request with an offered reservation.");
 					response = String.format("GET 200 OK\r\n%s\r\n%s\r\n\r\n",
 							offer.tokenString, offer.signature);
 					clientWriter.write(response);
@@ -75,7 +71,7 @@ public class AdhocServerConnection implements Runnable {
 				}
 				// relay request if cellular link is not dormant
 				else if (rrs.tm.getDataActivity() != TelephonyManager.DATA_ACTIVITY_DORMANT) {
-					log(String.format("Relaying vehicle %d request to cloud.", otherId));
+					rrs.log(String.format("Relaying vehicle %d GET request to cloud.", otherId));
 					Socket cloudSocket = new Socket();
 					try {
 						cloudSocket.connect(new InetSocketAddress(
@@ -100,9 +96,9 @@ public class AdhocServerConnection implements Runnable {
 							clientWriter.flush();
 						} while (clientSocket.isConnected());
 
-						log("Finished relaying other's request to cloud.");
+						rrs.log("Finished relaying other's GET request to cloud.");
 					} catch (IOException e) {
-						log("Unexpected I/O error or natural shutdown: "
+						rrs.log("Unexpected I/O error or natural shutdown: "
 								+ e.toString());
 					} finally {
 						try {
@@ -123,7 +119,7 @@ public class AdhocServerConnection implements Runnable {
 				}
 				// otherwise respond failure
 				else {
-					log("Responding to request, no token locally available.");
+					rrs.log("Responding to request, no token locally available.");
 					response = String.format("GET 404 ERROR\r\n");
 					clientWriter.write(response);
 					clientWriter.flush();

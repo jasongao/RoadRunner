@@ -92,26 +92,26 @@ public class RoadRunnerService extends Service implements LocationListener {
 		Location v2 = other.getLocation();
 
 		if (v1 == null || v2 == null) {
-			log("Link viable debug: no GPS fix.");
+			log_nodisplay("Link viable debug: no GPS fix.");
 			return true;
 		}
 
 		// Too far away (> 70m)
 		if (v1.distanceTo(v2) > 70) {
-			log("Link not viable: more than 70 meters apart.");
+			log_nodisplay("Link not viable: more than 70 meters apart.");
 			return false;
 		}
 
 		// Quite close together (< 20 m)
 		if (v1.distanceTo(v2) < 20) {
-			log("Link viable: less than 20 meters apart.");
+			log_nodisplay("Link viable: less than 20 meters apart.");
 			return false;
 		}
 
 		// Both stationary?
 		if (v1.hasSpeed() && v1.getSpeed() < 2 && v2.hasSpeed()
 				&& v2.getSpeed() < 2) {
-			log("Link viable: both stationary (less than 2 meters per second).");
+			log_nodisplay("Link viable: both stationary (less than 2 meters per second).");
 			return true;
 		}
 
@@ -121,7 +121,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 				&& v2.hasBearing()
 				&& ((Math.abs(v2.bearingTo(v1) - v2.getBearing()) < 45) || (Math
 						.abs(v2.bearingTo(v1) - v2.getBearing()) > 360 - 45))) {
-			log("Link viable: stationary and other vehicle moving closer.");
+			log_nodisplay("Link viable: stationary and other vehicle moving closer.");
 			return true;
 		}
 		if (v2.hasSpeed()
@@ -129,7 +129,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 				&& v1.hasBearing()
 				&& ((Math.abs(v1.bearingTo(v2) - v1.getBearing()) < 45) || (Math
 						.abs(v1.bearingTo(v2) - v1.getBearing()) > 360 - 45))) {
-			log("Link viable: moving closer to stationary other vehicle.");
+			log_nodisplay("Link viable: moving closer to stationary other vehicle.");
 			return true;
 		}
 
@@ -141,7 +141,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 						.abs(v1.bearingTo(v2) - v1.getBearing()) > 360 - 15)
 				&& (Math.abs(v2.bearingTo(v1) - v2.getBearing()) < 15 || Math
 						.abs(v2.bearingTo(v1) - v2.getBearing()) > 360 - 15)) {
-			log("Link viable: moving towards each other");
+			log_nodisplay("Link viable: moving towards each other");
 			return true;
 		}
 
@@ -154,11 +154,11 @@ public class RoadRunnerService extends Service implements LocationListener {
 				&& (Math.abs(v1.getBearing() - v2.getBearing()) < 15 || Math
 						.abs(v1.getBearing() - v2.getBearing()) > 360 - 15)
 				&& Math.abs(v1.getSpeed() - v2.getSpeed()) < 5) {
-			log("Link viable: moving together.");
+			log_nodisplay("Link viable: moving together.");
 			return true;
 		}
 
-		log("Link not viable: moving apart.");
+		log_nodisplay("Link not viable: moving apart.");
 		return false;
 	}
 
@@ -169,6 +169,9 @@ public class RoadRunnerService extends Service implements LocationListener {
 			case ADHOC_PACKET_RECV:
 				AdhocAnnounce other = (AdhocAnnounce) msg.obj;
 				long now = System.currentTimeMillis();
+				
+				log_nodisplay(String.format("Received UDP %s", other));
+				
 				if (!linkIsViable(mLoc, other)) {
 					break;
 				}
@@ -445,10 +448,17 @@ public class RoadRunnerService extends Service implements LocationListener {
 		return mBinder;
 	}
 
+	public void log_nodisplay(String message) {
+		Log.i(TAG, message);
+
+		mainHandler.obtainMessage(MainActivity.LOG_NODISPLAY, message)
+				.sendToTarget();
+	}
+	
 	public void log(String message) {
 		Log.i(TAG, message);
 
-		mainHandler.obtainMessage(MainActivity.LOG, "NS: " + message)
+		mainHandler.obtainMessage(MainActivity.LOG, message)
 				.sendToTarget();
 	}
 
@@ -579,7 +589,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 
 		// Start the adhoc UDP announcement thread
 		log("Starting adhoc announce thread...");
-		aat = new AdhocAnnounceThread(myHandler);
+		aat = new AdhocAnnounceThread(myHandler, this);
 		aat.start();
 
 		// Start the adhoc TCP server thread
