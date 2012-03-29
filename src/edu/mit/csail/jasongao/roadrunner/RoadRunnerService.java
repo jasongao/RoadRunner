@@ -72,21 +72,17 @@ public class RoadRunnerService extends Service implements LocationListener {
 	/** Reservations we are using/will use. Map regionId to done ResRequest */
 	private Map<String, ResRequest> reservationsInUse;
 
-	/** Reservations we can give away */
-	public Map<String, ConcurrentLinkedQueue<ResRequest>> reservationsOffered;
-	private Queue<ResRequest> offers;
+	/** Reservations we can give away. Will be sent to cloud eventually. */
+	public Queue<ResRequest> offers;
 
 	/** Pending GET RES_REQUESTS that can be sent to either cloud or to adhoc */
 	private Queue<ResRequest> getsPending;
-
-	/** Pending PUT RES_REQUESTS that will be sent to cloud eventually */
-	private Queue<ResRequest> putsPending;
 
 	/********
 	 * Helpers
 	 ********/
 
-	public boolean queueContains(Queue<ResRequest> q, String rid) {
+	public static boolean queueContains(Queue<ResRequest> q, String rid) {
 		for (Iterator<ResRequest> it = q.iterator(); it.hasNext();) {
 			ResRequest req = it.next();
 			if (req.regionId == rid) {
@@ -97,7 +93,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 		return false;
 	}
 
-	public Set<String> queueKeySet(Queue<ResRequest> q) {
+	public static Set<String> queueKeySet(Queue<ResRequest> q) {
 		Set<String> keys = new HashSet<String>();
 
 		for (Iterator<ResRequest> it = q.iterator(); it.hasNext();) {
@@ -108,7 +104,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 		return keys;
 	}
 
-	public ResRequest queuePoll(Queue<ResRequest> Q, String rid) {
+	public static ResRequest queuePoll(Queue<ResRequest> q, String rid) {
 		for (Iterator<ResRequest> it = q.iterator(); it.hasNext();) {
 			ResRequest req = it.next();
 			if (req.regionId == rid) {
@@ -398,15 +394,10 @@ public class RoadRunnerService extends Service implements LocationListener {
 						log(String.format("Added to reservationsInUse: %s",
 								reservationsInUse));
 					} else {
-						if (!reservationsOffered.containsKey(req.regionId)) {
-							reservationsOffered.put(req.regionId,
-									new ConcurrentLinkedQueue<ResRequest>());
-						}
-						reservationsOffered.get(req.regionId).add(req);
-						log(String.format(
-								"Added to reservationsOffered(%s): %s",
-								req.regionId,
-								reservationsOffered.get(req.regionId)));
+						req.hardDeadline = req.completed
+								+ Globals.REQUEST_DIRECT_DEADLINE_FROM_NOW;
+						offers.add(req);
+						log(String.format("Added to offers: %s", req.regionId));
 					}
 				}
 				/* GET FAILED */
@@ -427,24 +418,21 @@ public class RoadRunnerService extends Service implements LocationListener {
 			else if (req.type == ResRequest.RES_PUT) {
 				/* PUT SUCCESSFUL */
 				if (req.done) {
-					req.completed = System.currentTimeMillis();
-					log(String.format(
-							"PUT request on %s successful, took %d ms",
-							req.regionId, req.completed - req.created));
+					//req.completed = System.currentTimeMillis();
 				}
 				/* PUT FAILED */
 				else {
 					log(String.format(
 							"PUT request on %s failed, adding back to offers.",
 							req.regionId));
-					// Reset request time
+					// Reset request time and type
 					long now = System.currentTimeMillis();
 					req.softDeadline = now
 							+ Globals.REQUEST_RELAY_DEADLINE_FROM_NOW;
 					req.hardDeadline = now
 							+ Globals.REQUEST_DIRECT_DEADLINE_FROM_NOW;
-					putsPending.add(req);
-					reservationsOffered.get(req.regionId).add(req);
+					req.type = ResRequest.RES_GET;
+					offers.add(req);
 				}
 			}
 
@@ -490,13 +478,14 @@ public class RoadRunnerService extends Service implements LocationListener {
 			long now = System.currentTimeMillis();
 
 			// send timed-out PUT requests to cloud
-			for (Iterator<ResRequest> it = putsPending.iterator(); it.hasNext();) {
+			for (Iterator<ResRequest> it = offers.iterator(); it.hasNext();) {
 				ResRequest req = it.next();
 				if (req.hardDeadline < now) {
 					log(String
 							.format("PUT request hard deadline %d expired, direct to cloud: %s",
 									req.hardDeadline, req));
 					it.remove();
+					req.type = ResRequest.RES_PUT;
 					new ResRequestTask().execute(req, Globals.CLOUD_HOST);
 				}
 			}
@@ -520,7 +509,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 		}
 
 		// AdhocAnnounce what tokens we are offering
-		p.tokensOffered = new HashSet<String>(reservationsOffered.keySet());
+		p.tokensOffered = queueKeySet(this.offers);
 
 		p.triggerAnnounce = triggerAnnounce_;
 
@@ -579,7 +568,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 		List<String> update = new ArrayList<String>();
 		update.add(String.format("%s", this.mRegion));
 		update.add(String.format("%s", this.reservationsInUse.keySet()));
-		update.add(String.format("%s", this.reservationsOffered.keySet()));
+		update.add(String.format("%s", queueKeySet(this.offers)));
 		mainHandler.obtainMessage(MainActivity.UPDATE_DISPLAY, update)
 				.sendToTarget();
 	}
@@ -743,13 +732,14 @@ public class RoadRunnerService extends Service implements LocationListener {
 		this.regions = experimentARegions();
 
 		// Initialize state
-		this.reservationsOffered = new ConcurrentHashMap<String, ConcurrentLinkedQueue<ResRequest>>();
 		this.reservationsInUse = new ConcurrentHashMap<String, ResRequest>();
 		this.getsPending = new ConcurrentLinkedQueue<ResRequest>();
-		this.putsPending = new ConcurrentLinkedQueue<ResRequest>();
+		this.offers = new ConcurrentLinkedQueue<ResRequest>();
 
 		// Start periodic announcements for request deadline checking
 		myHandler.postDelayed(cloudDirectGetRequestCheck,
+				Globals.REQUEST_DEADLINE_CHECK_PERIOD);
+		myHandler.postDelayed(cloudDirectPutRequestCheck,
 				Globals.REQUEST_DEADLINE_CHECK_PERIOD);
 
 		// Start recurring UDP adhoc announcements
@@ -1018,6 +1008,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 
 		myHandler.removeCallbacks(adhocAnnounceR);
 		myHandler.removeCallbacks(cloudDirectGetRequestCheck);
+		myHandler.removeCallbacks(cloudDirectPutRequestCheck);
 
 		log("Terminating adhoc announce thread...");
 		if (aat != null) {
@@ -1049,10 +1040,14 @@ public class RoadRunnerService extends Service implements LocationListener {
 		}
 		this.mRegion = newRegion;
 
+		long now = System.currentTimeMillis();
+
 		// offer up old reservation
 		if (this.reservationsInUse.containsKey(oldRegion)) {
 			ResRequest oldRes = this.reservationsInUse.remove(oldRegion);
-			this.reservationsOffered.get(oldRegion).add(oldRes);
+			oldRes.hardDeadline = now
+					+ Globals.REQUEST_DIRECT_DEADLINE_FROM_NOW;
+			this.offers.add(oldRes);
 		}
 
 		// region transition, so check for reservation if necessary
@@ -1064,13 +1059,16 @@ public class RoadRunnerService extends Service implements LocationListener {
 			log(String
 					.format("Moved from %s to %s with GPS fix %s, reservation from in-use store.",
 							oldRegion, newRegion, loc));
-		} else if (this.reservationsOffered.containsKey(newRegion)
-				&& this.reservationsOffered.get(newRegion).size() != 0) {
+		} else if (queueKeySet(offers).contains(newRegion)) {
 			log(String
 					.format("Moved from %s to %s with GPS fix %s, reservation from offer store.",
 							oldRegion, newRegion, loc));
-			ResRequest res = this.reservationsInUse.remove(oldRegion);
-			this.reservationsInUse.put(newRegion, res);
+			ResRequest res = queuePoll(offers, newRegion);
+			if (res != null) {
+				this.reservationsInUse.put(newRegion, res);
+			} else {
+				log("ERROR getting reservation from offer store, NULL.");
+			}
 		} else {
 			log(String
 					.format("Moved from %s to %s with GPS fix %s, no reservation, PENALTY.",

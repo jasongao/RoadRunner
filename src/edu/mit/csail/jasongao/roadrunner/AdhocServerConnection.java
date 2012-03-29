@@ -51,15 +51,8 @@ public class AdhocServerConnection implements Runnable {
 
 			if (method != null && method.equals("GET")) {
 				// respond with token from offered tokens store if possible
-				if (rrs.reservationsOffered.containsKey(regionId)
-						&& rrs.reservationsOffered.get(regionId).size() != 0) {
-					ResRequest offer = rrs.reservationsOffered.get(regionId)
-							.poll();
-
-					// empty keyset if necessary so adhoc announce is correct
-					if (rrs.reservationsOffered.get(regionId).size() == 0) {
-						rrs.reservationsOffered.remove(regionId);
-					}
+				if (RoadRunnerService.queueContains(rrs.offers, regionId)) {
+					ResRequest offer = RoadRunnerService.queuePoll(rrs.offers, regionId);
 
 					rrs.log("Responding to GET request with an offered reservation.");
 					response = String.format("GET 200 OK\r\n%s\r\n%s\r\n\r\n",
