@@ -27,6 +27,10 @@ public class ResRequest implements Serializable {
 
 	public ResRequest(long srcId_, int type_, String regionId_) {
 		this.created = System.currentTimeMillis();
+		this.softDeadline = this.created
+				+ Globals.REQUEST_RELAY_GET_DEADLINE_FROM_NOW;
+		this.hardDeadline = this.created
+				+ Globals.REQUEST_DIRECT_GET_DEADLINE_FROM_NOW;
 		this.src = srcId_;
 		this.type = type_;
 		this.regionId = regionId_;

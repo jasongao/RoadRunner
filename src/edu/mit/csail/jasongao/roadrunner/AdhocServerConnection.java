@@ -49,11 +49,11 @@ public class AdhocServerConnection implements Runnable {
 			String regionId = parts[2];
 			String response;
 
-			if (method != null && method.equals("GET")) {
+			if ("GET".equals(method)) {
 				// respond with token from offered tokens store if possible
-				if (RoadRunnerService.queueContains(rrs.offers, regionId)) {
-					ResRequest offer = RoadRunnerService.queuePoll(rrs.offers, regionId);
-
+				ResRequest offer = RoadRunnerService.queuePoll(rrs.offers,
+						regionId);
+				if (offer != null) {
 					rrs.log("Responding to GET request with an offered reservation.");
 					response = String.format("GET 200 OK\r\n%s\r\n%s\r\n\r\n",
 							offer.tokenString, offer.signature);
@@ -89,6 +89,8 @@ public class AdhocServerConnection implements Runnable {
 						String relayResponse;
 						relayResponse = cloudReader.readLine();
 
+						rrs.log("Relaying cloud response: " + relayResponse);
+						
 						if ("GET 200 OK".equals(relayResponse)) {
 							clientWriter.write(relayResponse + "\r\n");
 							clientWriter.write(cloudReader.readLine() + "\r\n");
@@ -97,12 +99,11 @@ public class AdhocServerConnection implements Runnable {
 							clientWriter.flush();
 						} else { // not OK
 							clientWriter.write(relayResponse + "\r\n");
+							clientWriter.flush();
 						}
 
-						rrs.log("Finished relaying other's GET request to cloud.");
-						
 						rrs.myHandler.post(rrs.updateLastDataActivity);
-						
+
 					} catch (IOException e) {
 						rrs.log("Unexpected I/O error or natural shutdown: "
 								+ e.toString());
