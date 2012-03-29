@@ -20,8 +20,8 @@ public class Globals {
 	// static final long CLOUD_HEARTBEAT_INTERVAL = 1000 * 60 * 3;
 
 	/** Relay logic */
-	static final int REQUEST_HARD_DEADLINE_FROM_NOW = 10000;
-	static final int REQUEST_SOFT_DEADLINE_FROM_NOW = 1000;
+	static final int REQUEST_DIRECT_DEADLINE_FROM_NOW = 10000;
+	static final int REQUEST_RELAY_DEADLINE_FROM_NOW = 1000;
 	static final int REQUEST_DEADLINE_CHECK_PERIOD = 500;
 	//static final int LINK_LIFETIME_THRESHOLD = 2000; // milliseconds
 	//static final int LINK_DISTANCE_THRESHOLD = 50; // 50 meters
