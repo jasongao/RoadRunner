@@ -122,7 +122,7 @@ public class MainActivity extends Activity {
 		if (Environment.MEDIA_MOUNTED.equals(state)) {
 			// We can read and write the media
 			logFile = new File(Environment.getExternalStorageDirectory(),
-					String.format("sonar-%d.txt", System.currentTimeMillis()));
+					String.format("roadrunner-%d.txt", System.currentTimeMillis()));
 			try {
 				logWriter = new PrintWriter(logFile);
 				log("Opened log file for writing");

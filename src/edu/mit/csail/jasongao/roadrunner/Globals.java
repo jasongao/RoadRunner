@@ -20,7 +20,7 @@ public class Globals {
 	/** Relay logic */
 	static final int REQUEST_DEADLINE_CHECK_PERIOD = 500;
 	static final int REQUEST_DIRECT_PUT_DEADLINE_FROM_NOW = 60000;
-	static final int REQUEST_DIRECT_GET_DEADLINE_FROM_NOW = 30000;
-	static final int REQUEST_RELAY_GET_DEADLINE_FROM_NOW = 10000;
-	public static final long LAST_DATA_ACTIVITY_THRESHOLD = 8000;
+	static final int REQUEST_DIRECT_GET_DEADLINE_FROM_NOW = 10000;
+	static final int REQUEST_RELAY_GET_DEADLINE_FROM_NOW = 3000;
+	static final int LAST_DATA_ACTIVITY_THRESHOLD = 8000;
 }
