@@ -71,7 +71,9 @@ public class AdhocServerConnection implements Runnable {
 				}
 				// relay request if cellular link is not dormant
 				else if (rrs.tm.getDataActivity() != TelephonyManager.DATA_ACTIVITY_DORMANT) {
-					rrs.log(String.format("Relaying vehicle %d GET request to cloud.", otherId));
+					rrs.log(String.format(
+							"Relaying vehicle %d GET request to cloud.",
+							otherId));
 					Socket cloudSocket = new Socket();
 					try {
 						cloudSocket.connect(new InetSocketAddress(
@@ -91,10 +93,18 @@ public class AdhocServerConnection implements Runnable {
 						cloudWriter.flush();
 
 						// relay response back to client
-						do {
+						String relayResponse;
+						relayResponse = cloudReader.readLine();
+
+						if ("GET 200 OK".equals(relayResponse)) {
+							clientWriter.write(relayResponse + "\r\n");
+							clientWriter.write(cloudReader.readLine() + "\r\n");
+							clientWriter.write(cloudReader.readLine() + "\r\n");
 							clientWriter.write(cloudReader.readLine() + "\r\n");
 							clientWriter.flush();
-						} while (clientSocket.isConnected());
+						} else { // not OK
+							clientWriter.write(relayResponse + "\r\n");
+						}
 
 						rrs.log("Finished relaying other's GET request to cloud.");
 					} catch (IOException e) {

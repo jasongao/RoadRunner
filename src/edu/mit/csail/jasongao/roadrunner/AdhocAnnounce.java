@@ -20,6 +20,7 @@ public class AdhocAnnounce implements Serializable {
 
 	public Set<String> tokensOffered; // Regions for which I am offering t's
 	public int dataActivity = -1; // dataActivity state from TelephonyManager
+	public boolean triggerAnnounce = false;
 
 	public AdhocAnnounce(long src_, Location loc) {
 		timestamp = System.currentTimeMillis();

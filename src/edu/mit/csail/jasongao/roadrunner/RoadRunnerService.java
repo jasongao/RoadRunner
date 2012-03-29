@@ -169,9 +169,12 @@ public class RoadRunnerService extends Service implements LocationListener {
 			case ADHOC_PACKET_RECV:
 				AdhocAnnounce other = (AdhocAnnounce) msg.obj;
 				long now = System.currentTimeMillis();
-				
 				log_nodisplay(String.format("Received UDP %s", other));
-				
+
+				if (other.triggerAnnounce) {
+					adhocAnnounce(false);
+				}
+
 				if (!linkIsViable(mLoc, other)) {
 					break;
 				}
@@ -242,17 +245,18 @@ public class RoadRunnerService extends Service implements LocationListener {
 					if (response.equals("GET 200 OK")) {
 						req.tokenString = reader.readLine();
 						req.signature = reader.readLine();
-						log(String.format("GET 200 OK\nTOKEN %s\nSIG %s",
-								req.tokenString, req.signature));
-
-						// deserialize token attributes
 						String[] parts = req.tokenString.split(" ");
 						req.issued = Long.parseLong(parts[1]);
 						req.expires = Long.parseLong(parts[2]);
 
+						log_nodisplay(String
+								.format("Received:\nTOKEN %s\nSIG %s\nISSUED: %d\nEXPIRES: %d",
+										req.tokenString, req.signature,
+										req.issued, req.expires));
+
 						// TODO verify signature
 						if (!req.tokenIsValid()) {
-							log("Token signature verification FAILED!");
+							// log("Token signature verification FAILED!");
 							// failed to verify token, put back into pending q?
 						}
 
@@ -311,9 +315,9 @@ public class RoadRunnerService extends Service implements LocationListener {
 			}
 
 			long stopTime = System.currentTimeMillis();
-			log(String.format(
-					"GET request on %s network access completed in %d ms",
-					req.regionId, stopTime - startTime));
+			log(String
+					.format("GET request for %s on %s network access completed in %d ms",
+							req.regionId, mHost, stopTime - startTime));
 
 			return req;
 		}
@@ -328,7 +332,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 				if (req.done) {
 					req.completed = System.currentTimeMillis();
 					log(String.format(
-							"GET request on %s successful, after %d ms",
+							"GET request for %s completed after %d ms",
 							req.regionId, req.completed - req.created));
 					/* Use reservation if we don't have it, otherwise extras */
 					if (!reservationsInUse.containsKey(req.regionId)) {
@@ -405,18 +409,24 @@ public class RoadRunnerService extends Service implements LocationListener {
 		}
 	};
 
+	private void adhocAnnounce(boolean triggerAnnounce_) {
+		AdhocAnnounce p = new AdhocAnnounce(mId, mLoc);
+
+		// AdhocAnnounce the state of our data link
+		p.dataActivity = tm.getDataActivity();
+
+		// AdhocAnnounce what tokens we are offering
+		p.tokensOffered = new HashSet<String>(reservationsOffered.keySet());
+
+		p.triggerAnnounce = triggerAnnounce_;
+
+		new SendPacketsTask().execute(p);
+	}
+
 	/** Periodic status announcements over adhoc */
 	private Runnable adhocAnnounceR = new Runnable() {
 		public void run() {
-			AdhocAnnounce p = new AdhocAnnounce(mId, mLoc);
-
-			// AdhocAnnounce the state of our data link
-			p.dataActivity = tm.getDataActivity();
-
-			// AdhocAnnounce what tokens we are offering
-			p.tokensOffered = new HashSet<String>(reservationsOffered.keySet());
-
-			new SendPacketsTask().execute(p);
+			adhocAnnounce(false);
 			myHandler.postDelayed(this, Globals.ADHOC_ANNOUNCE_PERIOD);
 		}
 	};
@@ -454,12 +464,11 @@ public class RoadRunnerService extends Service implements LocationListener {
 		mainHandler.obtainMessage(MainActivity.LOG_NODISPLAY, message)
 				.sendToTarget();
 	}
-	
+
 	public void log(String message) {
 		Log.i(TAG, message);
 
-		mainHandler.obtainMessage(MainActivity.LOG, message)
-				.sendToTarget();
+		mainHandler.obtainMessage(MainActivity.LOG, message).sendToTarget();
 	}
 
 	public void updateDisplay() {
@@ -487,6 +496,8 @@ public class RoadRunnerService extends Service implements LocationListener {
 		r1.softDeadline = r1.created + Globals.REQUEST_SOFT_DEADLINE_FROM_NOW;
 		r1.hardDeadline = r1.created + Globals.REQUEST_HARD_DEADLINE_FROM_NOW;
 		getsPending.add(r1);
+		
+		adhocAnnounce(true); // ask nearby vehicles to announce their offers
 	}
 
 	public void makeReservationRouteB() {
@@ -931,7 +942,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 			this.reservationsInUse.put(newRegion, res);
 		} else {
 			log(String
-					.format("Moved from %s to %s with GPS fix %s, missing reservation, PENALTY.",
+					.format("Moved from %s to %s with GPS fix %s, no reservation, PENALTY.",
 							oldRegion, newRegion, loc));
 		}
 
