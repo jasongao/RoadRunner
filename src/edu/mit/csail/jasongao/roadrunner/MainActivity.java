@@ -78,7 +78,7 @@ public class MainActivity extends Activity {
 
 	/** Log message and also display on screen */
 	public void log(String line) {
-		line = String.format("%d: %s", System.currentTimeMillis(), line);
+		line = String.format("%s", line);
 		Log.i(TAG, line);
 		receivedMessages.add((String) line);
 		if (logWriter != null) {
@@ -88,7 +88,7 @@ public class MainActivity extends Activity {
 
 	/** Log message only to file. */
 	public void log_nodisplay(String line) {
-		line = String.format("%d: %s", System.currentTimeMillis(), line);
+		line = String.format("%s", line);
 		Log.i(TAG, line);
 		if (logWriter != null) {
 			logWriter.println((String) line);
@@ -115,8 +115,6 @@ public class MainActivity extends Activity {
 		receivedMessages = new ArrayAdapter<String>(this, R.layout.message);
 		((ListView) findViewById(R.id.msgList)).setAdapter(receivedMessages);
 
-		log("onCreate()");
-
 		// Setup writing to log file on sd card
 		String state = Environment.getExternalStorageState();
 		if (Environment.MEDIA_MOUNTED.equals(state)) {
@@ -139,8 +137,6 @@ public class MainActivity extends Activity {
 
 	@Override
 	public void onDestroy() {
-		log("onDestroy()");
-
 		doUnbindService();
 
 		logWriter.flush();

@@ -55,6 +55,9 @@ public class RoadRunnerService extends Service implements LocationListener {
 	 * RoadRunner state
 	 ***********************************************/
 
+	private boolean clockSynced = false;
+	private long clockOffset = 0;
+
 	private boolean adhocEnabled = false;
 
 	/**
@@ -128,22 +131,27 @@ public class RoadRunnerService extends Service implements LocationListener {
 			return true;
 		}
 
+		float distance = v1.distanceTo(v2);
+
 		// Too far away (> 70m)
-		if (v1.distanceTo(v2) > 70) {
-			log_nodisplay("Link not viable: more than 70 meters apart.");
+		if (distance > 70) {
+			log_nodisplay(String.format(
+					"Link not viable: %.1f meters apart. (>70)", distance));
 			return false;
 		}
 
 		// Quite close together (< 20 m)
 		if (v1.distanceTo(v2) < 20) {
-			log_nodisplay("Link viable: less than 20 meters apart.");
+			log_nodisplay(String.format(
+					"Link viable: %.1f meters apart. (<20m)", distance));
 			return false;
 		}
 
 		// Both stationary?
 		if (v1.hasSpeed() && v1.getSpeed() < 2 && v2.hasSpeed()
 				&& v2.getSpeed() < 2) {
-			log_nodisplay("Link viable: both stationary (less than 2 meters per second).");
+			log_nodisplay(String.format(
+					"Link viable: %.1f meters apart. (low speed)", distance));
 			return true;
 		}
 
@@ -153,7 +161,9 @@ public class RoadRunnerService extends Service implements LocationListener {
 				&& v2.hasBearing()
 				&& ((Math.abs(v2.bearingTo(v1) - v2.getBearing()) < 45) || (Math
 						.abs(v2.bearingTo(v1) - v2.getBearing()) > 360 - 45))) {
-			log_nodisplay("Link viable: stationary and other vehicle moving closer.");
+			log_nodisplay(String.format(
+					"Link viable: %.1f meters apart. (other approaching)",
+					distance));
 			return true;
 		}
 		if (v2.hasSpeed()
@@ -161,7 +171,9 @@ public class RoadRunnerService extends Service implements LocationListener {
 				&& v1.hasBearing()
 				&& ((Math.abs(v1.bearingTo(v2) - v1.getBearing()) < 45) || (Math
 						.abs(v1.bearingTo(v2) - v1.getBearing()) > 360 - 45))) {
-			log_nodisplay("Link viable: moving closer to stationary other vehicle.");
+			log_nodisplay(String.format(
+					"Link viable: %.1f meters apart. (approaching other)",
+					distance));
 			return true;
 		}
 
@@ -173,7 +185,9 @@ public class RoadRunnerService extends Service implements LocationListener {
 						.abs(v1.bearingTo(v2) - v1.getBearing()) > 360 - 15)
 				&& (Math.abs(v2.bearingTo(v1) - v2.getBearing()) < 15 || Math
 						.abs(v2.bearingTo(v1) - v2.getBearing()) > 360 - 15)) {
-			log_nodisplay("Link viable: moving towards each other");
+			log_nodisplay(String.format(
+					"Link viable: %.1f meters apart. (mutual approach)",
+					distance));
 			return true;
 		}
 
@@ -186,11 +200,14 @@ public class RoadRunnerService extends Service implements LocationListener {
 				&& (Math.abs(v1.getBearing() - v2.getBearing()) < 15 || Math
 						.abs(v1.getBearing() - v2.getBearing()) > 360 - 15)
 				&& Math.abs(v1.getSpeed() - v2.getSpeed()) < 5) {
-			log_nodisplay("Link viable: moving together.");
+			log_nodisplay(String.format(
+					"Link viable: %.1f meters apart. (moving together)",
+					distance));
 			return true;
 		}
 
-		log_nodisplay("Link not viable: moving apart.");
+		log_nodisplay(String.format(
+				"Link viable: %.1f meters apart. (moving apart)", distance));
 		return false;
 	}
 
@@ -203,7 +220,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 					break;
 				}
 				AdhocAnnounce other = (AdhocAnnounce) msg.obj;
-				long now = System.currentTimeMillis();
+				long now = getTime();
 				log_nodisplay(String.format("Received UDP %s", other));
 
 				if (other.triggerAnnounce) {
@@ -252,7 +269,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 			ResRequest req = (ResRequest) params[0];
 			String mHost = (String) params[1];
 
-			long startTime = System.currentTimeMillis();
+			long startTime = getTime();
 
 			Socket s = new Socket();
 			try {
@@ -343,7 +360,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 				}
 			}
 
-			long stopTime = System.currentTimeMillis();
+			long stopTime = getTime();
 
 			if (req.type == ResRequest.RES_GET) {
 				log(String
@@ -373,7 +390,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 			if (req.type == ResRequest.RES_GET) {
 				/* GET SUCCESSFUL */
 				if (req.done) {
-					req.completed = System.currentTimeMillis();
+					req.completed = getTime();
 					log(String.format(
 							"GET request for %s completed after %d ms",
 							req.regionId, req.completed - req.created));
@@ -395,7 +412,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 							.format("GET request on %s failed, adding back to pending queue.",
 									req.regionId));
 					// reset deadlines
-					long now = System.currentTimeMillis();
+					long now = getTime();
 					req.softDeadline = now
 							+ Globals.REQUEST_RELAY_GET_DEADLINE_FROM_NOW;
 					req.hardDeadline = now
@@ -407,7 +424,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 			else if (req.type == ResRequest.RES_PUT) {
 				/* PUT SUCCESSFUL */
 				if (req.done) {
-					// req.completed = System.currentTimeMillis();
+					// req.completed = getTime();
 				}
 				/* PUT FAILED */
 				else {
@@ -415,7 +432,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 							"PUT request on %s failed, adding back to offers.",
 							req.regionId));
 					// Reset request time and type
-					long now = System.currentTimeMillis();
+					long now = getTime();
 					req.hardDeadline = now
 							+ Globals.REQUEST_DIRECT_PUT_DEADLINE_FROM_NOW;
 					req.type = ResRequest.RES_GET;
@@ -433,14 +450,14 @@ public class RoadRunnerService extends Service implements LocationListener {
 
 	public Runnable updateLastDataActivity = new Runnable() {
 		public void run() {
-			lastDataActivity = System.currentTimeMillis();
+			lastDataActivity = getTime();
 		}
 	};
 
 	/** Periodic check for GET requests that need to be sent to the cloud */
 	private Runnable cloudDirectGetRequestCheck = new Runnable() {
 		public void run() {
-			long now = System.currentTimeMillis();
+			long now = getTime();
 
 			// send expired requests directly to cloud
 			// for (ResRequest resRequest : getsPending) {
@@ -462,7 +479,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 	/** Periodic check for PUT that need to be sent to the cloud */
 	private Runnable cloudDirectPutRequestCheck = new Runnable() {
 		public void run() {
-			long now = System.currentTimeMillis();
+			long now = getTime();
 
 			// send timed-out PUT requests to cloud
 			for (Iterator<ResRequest> it = offers.iterator(); it.hasNext();) {
@@ -489,7 +506,8 @@ public class RoadRunnerService extends Service implements LocationListener {
 		AdhocAnnounce p = new AdhocAnnounce(mId, mLoc);
 
 		// AdhocAnnounce the state of our data link
-		if (this.lastDataActivity + Globals.LAST_DATA_ACTIVITY_THRESHOLD < System.currentTimeMillis()) {
+		if (this.lastDataActivity + Globals.LAST_DATA_ACTIVITY_THRESHOLD < System
+				.currentTimeMillis()) {
 			p.dataActivity = tm.getDataActivity();
 		} else {
 			p.dataActivity = TelephonyManager.DATA_ACTIVITY_DORMANT;
@@ -539,14 +557,16 @@ public class RoadRunnerService extends Service implements LocationListener {
 	}
 
 	public void log_nodisplay(String message) {
-		Log.i(TAG, message);
+		String line = String.format("%d: %s", getTime(), message);
+		Log.i(TAG, line);
 
-		mainHandler.obtainMessage(MainActivity.LOG_NODISPLAY, message)
+		mainHandler.obtainMessage(MainActivity.LOG_NODISPLAY, line)
 				.sendToTarget();
 	}
 
 	public void log(String message) {
-		Log.i(TAG, message);
+		String line = String.format("%d: %s", getTime(), message);
+		Log.i(TAG, line);
 
 		mainHandler.obtainMessage(MainActivity.LOG, message).sendToTarget();
 	}
@@ -563,7 +583,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 	/***********************************************
 	 * Activity-Service interface
 	 ***********************************************/
-	
+
 	public void makeRequest(ResRequest r1) {
 		if (this.adhocEnabled) {
 			getsPending.add(r1); // queue up requests
@@ -579,7 +599,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 		ResRequest r1 = new ResRequest(mId, ResRequest.DEBUG_RESET, "Vassar-1");
 		new ResRequestTask().execute(r1, Globals.CLOUD_HOST);
 	}
-	
+
 	public void makeReservationRouteA() {
 		log(String.format("Making ResRequests for route A"));
 		makeRequest(new ResRequest(mId, ResRequest.RES_GET, "Vassar-1"));
@@ -613,7 +633,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 		makeRequest(new ResRequest(mId, ResRequest.RES_GET, "Main-3"));
 		makeRequest(new ResRequest(mId, ResRequest.RES_GET, "Mass-2"));
 		log(String.format("Adding ResRequests for route C"));
-		
+
 	}
 
 	/***********************************************
@@ -1014,9 +1034,21 @@ public class RoadRunnerService extends Service implements LocationListener {
 	 * GPS
 	 ***********************************************/
 
+	public long getTime() {
+		return System.currentTimeMillis() + this.clockOffset;
+	}
+
 	/** Location - location changed */
 	@Override
 	public void onLocationChanged(Location loc) {
+		// sync internal clock to GPS on first fix
+		if (!this.clockSynced) {
+			this.clockOffset = loc.getTime() - getTime();
+			this.clockSynced = true;
+			log(String.format("CLOCK SYNCED TO GPS with offset %d",
+					this.clockOffset));
+		}
+
 		this.mLoc = loc;
 
 		// did we enter a new region?
@@ -1027,7 +1059,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 		}
 		this.mRegion = newRegion;
 
-		long now = System.currentTimeMillis();
+		long now = getTime();
 
 		// offer up old reservation
 		if (this.reservationsInUse.containsKey(oldRegion)) {
