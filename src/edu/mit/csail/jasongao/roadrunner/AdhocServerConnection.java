@@ -107,6 +107,9 @@ public class AdhocServerConnection implements Runnable {
 						}
 
 						rrs.log("Finished relaying other's GET request to cloud.");
+						
+						rrs.myHandler.post(rrs.updateLastDataActivity);
+						
 					} catch (IOException e) {
 						rrs.log("Unexpected I/O error or natural shutdown: "
 								+ e.toString());

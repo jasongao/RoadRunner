@@ -24,7 +24,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -38,6 +37,7 @@ import android.os.Message;
 import android.os.PowerManager;
 import android.telephony.TelephonyManager;
 import android.util.Log;
+import android.widget.CheckBox;
 
 public class RoadRunnerService extends Service implements LocationListener {
 	public static final String TAG = "RoadRunnerService";
@@ -54,6 +54,14 @@ public class RoadRunnerService extends Service implements LocationListener {
 	/***********************************************
 	 * RoadRunner state
 	 ***********************************************/
+
+	private boolean adhocEnabled = false;
+
+	/**
+	 * When was the cellular data link last active? It goes dormant after 10
+	 * seconds of inactivity
+	 */
+	private long lastDataActivity = 0;
 
 	private List<Region> regions;
 
@@ -162,7 +170,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 		return false;
 	}
 
-	private final Handler myHandler = new Handler() {
+	public final Handler myHandler = new Handler() {
 		@Override
 		public void handleMessage(Message msg) {
 			switch (msg.what) {
@@ -319,6 +327,9 @@ public class RoadRunnerService extends Service implements LocationListener {
 					.format("GET request for %s on %s network access completed in %d ms",
 							req.regionId, mHost, stopTime - startTime));
 
+			// Update last cellular access
+			myHandler.post(updateLastDataActivity);
+
 			return req;
 		}
 
@@ -384,8 +395,14 @@ public class RoadRunnerService extends Service implements LocationListener {
 	}
 
 	/***********************************************
-	 * Recurring Runnables
+	 * Runnables
 	 ***********************************************/
+
+	public Runnable updateLastDataActivity = new Runnable() {
+		public void run() {
+			lastDataActivity = System.currentTimeMillis();
+		}
+	};
 
 	/** Periodic check for RES_REQUESTS that need to be sent to the cloud */
 	private Runnable cloudDirectRequestCheck = new Runnable() {
@@ -413,7 +430,11 @@ public class RoadRunnerService extends Service implements LocationListener {
 		AdhocAnnounce p = new AdhocAnnounce(mId, mLoc);
 
 		// AdhocAnnounce the state of our data link
-		p.dataActivity = tm.getDataActivity();
+		if (this.lastDataActivity + 7000 < System.currentTimeMillis()) {
+			p.dataActivity = tm.getDataActivity();
+		} else {
+			p.dataActivity = TelephonyManager.DATA_ACTIVITY_DORMANT;
+		}
 
 		// AdhocAnnounce what tokens we are offering
 		p.tokensOffered = new HashSet<String>(reservationsOffered.keySet());
@@ -496,7 +517,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 		r1.softDeadline = r1.created + Globals.REQUEST_SOFT_DEADLINE_FROM_NOW;
 		r1.hardDeadline = r1.created + Globals.REQUEST_HARD_DEADLINE_FROM_NOW;
 		getsPending.add(r1);
-		
+
 		adhocAnnounce(true); // ask nearby vehicles to announce their offers
 	}
 
@@ -595,8 +616,10 @@ public class RoadRunnerService extends Service implements LocationListener {
 		stop();
 	}
 
-	public synchronized void start() {
+	public synchronized void start(boolean adhocEnabled_) {
 		log("Service started, connecting to networks...");
+
+		this.adhocEnabled = adhocEnabled_;
 
 		// Start the adhoc UDP announcement thread
 		log("Starting adhoc announce thread...");
@@ -624,7 +647,12 @@ public class RoadRunnerService extends Service implements LocationListener {
 		// Start periodic announcements for request deadline checking
 		myHandler.postDelayed(cloudDirectRequestCheck,
 				Globals.REQUEST_DEADLINE_CHECK_PERIOD);
-		myHandler.postDelayed(adhocAnnounceR, Globals.ADHOC_ANNOUNCE_PERIOD);
+
+		// Start recurring UDP adhoc announcements
+		if (adhocEnabled) {
+			myHandler
+					.postDelayed(adhocAnnounceR, Globals.ADHOC_ANNOUNCE_PERIOD);
+		}
 
 		updateDisplay();
 	}
@@ -965,16 +993,16 @@ public class RoadRunnerService extends Service implements LocationListener {
 		switch (status) {
 		case LocationProvider.OUT_OF_SERVICE:
 			log("LocationProvider out of service, stopping adhoc announcements.");
-			myHandler.removeCallbacks(adhocAnnounceR);
+			// myHandler.removeCallbacks(adhocAnnounceR);
 			break;
 		case LocationProvider.TEMPORARILY_UNAVAILABLE:
 			log("LocationProvider temporarily unavailable, stopping adhoc announcements.");
-			myHandler.removeCallbacks(adhocAnnounceR);
+			// myHandler.removeCallbacks(adhocAnnounceR);
 			break;
 		case LocationProvider.AVAILABLE:
 			log("LocationProvider available, starting adhoc announcements.");
-			myHandler
-					.postDelayed(adhocAnnounceR, Globals.ADHOC_ANNOUNCE_PERIOD);
+			// myHandler.postDelayed(adhocAnnounceR,
+			// Globals.ADHOC_ANNOUNCE_PERIOD);
 			break;
 		}
 	}

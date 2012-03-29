@@ -20,6 +20,7 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -84,7 +85,7 @@ public class MainActivity extends Activity {
 			logWriter.println((String) line);
 		}
 	}
-	
+
 	/** Log message only to file. */
 	public void log_nodisplay(String line) {
 		line = String.format("%d: %s", System.currentTimeMillis(), line);
@@ -168,8 +169,9 @@ public class MainActivity extends Activity {
 			Toast.makeText(getApplicationContext(), "Service connected.",
 					Toast.LENGTH_LONG).show();
 
-			// Start network connections
-			mService.start();
+			// Start the service
+			CheckBox adhocCheckBox = (CheckBox) findViewById(R.id.adhoc_checkbox);
+			mService.start(adhocCheckBox.isChecked());
 		}
 
 		/** If service disconnects -unexpectedly- / crashes */
@@ -195,7 +197,8 @@ public class MainActivity extends Activity {
 			mService.stop();
 			unbindService(mServiceConnection);
 			mBound = false;
-			((Button) findViewById(R.id.connect_button)).setText("Start RoadRunner");
+			((Button) findViewById(R.id.connect_button))
+					.setText("Start RoadRunner");
 
 			Toast.makeText(getApplicationContext(), "Service disconnected.",
 					Toast.LENGTH_LONG).show();
