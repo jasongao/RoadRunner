@@ -489,7 +489,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 		AdhocAnnounce p = new AdhocAnnounce(mId, mLoc);
 
 		// AdhocAnnounce the state of our data link
-		if (this.lastDataActivity + 7000 < System.currentTimeMillis()) {
+		if (this.lastDataActivity + Globals.LAST_DATA_ACTIVITY_THRESHOLD < System.currentTimeMillis()) {
 			p.dataActivity = tm.getDataActivity();
 		} else {
 			p.dataActivity = TelephonyManager.DATA_ACTIVITY_DORMANT;
@@ -592,17 +592,21 @@ public class RoadRunnerService extends Service implements LocationListener {
 	}
 
 	public void makeReservationRouteB() {
-		log(String.format("Making ResRequests for route A"));
+		log(String.format("Making ResRequests for route B"));
+		makeRequest(new ResRequest(mId, ResRequest.RES_GET, "Albany-1"));
+		makeRequest(new ResRequest(mId, ResRequest.RES_GET, "Albany-2"));
 		makeRequest(new ResRequest(mId, ResRequest.RES_GET, "Vassar-1"));
-		makeRequest(new ResRequest(mId, ResRequest.RES_GET, "Main-1"));
-		makeRequest(new ResRequest(mId, ResRequest.RES_GET, "Main-2"));
 		makeRequest(new ResRequest(mId, ResRequest.RES_GET, "Main-3"));
-		makeRequest(new ResRequest(mId, ResRequest.RES_GET, "Windsor-1"));
-		makeRequest(new ResRequest(mId, ResRequest.RES_GET, "Mass-1"));
 		makeRequest(new ResRequest(mId, ResRequest.RES_GET, "Mass-2"));
 	}
 
 	public void makeReservationRouteC() {
+		makeRequest(new ResRequest(mId, ResRequest.RES_GET, "Albany-1"));
+		makeRequest(new ResRequest(mId, ResRequest.RES_GET, "Portland-1"));
+		makeRequest(new ResRequest(mId, ResRequest.RES_GET, "Main-2"));
+		makeRequest(new ResRequest(mId, ResRequest.RES_GET, "Vassar-1"));
+		makeRequest(new ResRequest(mId, ResRequest.RES_GET, "Main-3"));
+		makeRequest(new ResRequest(mId, ResRequest.RES_GET, "Mass-2"));
 		log(String.format("Adding ResRequests for route C"));
 		
 	}
@@ -630,8 +634,9 @@ public class RoadRunnerService extends Service implements LocationListener {
 					publishProgress((int) i + 1, (int) count);
 					aat.sendData(data);
 					sent++;
+					log_nodisplay("sent adhoc announcement");
 				} catch (IOException e) {
-					log("error sending packet:" + e.getMessage());
+					log("error sending adhoc announcement:" + e.getMessage());
 				}
 			}
 			return sent;
