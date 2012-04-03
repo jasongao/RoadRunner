@@ -48,15 +48,12 @@ public class RoadRunnerService extends Service implements LocationListener {
 	TelephonyManager tm;
 
 	// Communication threads
-	private AdhocAnnounceThread aat;
+	private AdhocPacketThread aat;
 	private AdhocServerThread ast;
 
 	/***********************************************
 	 * RoadRunner state
 	 ***********************************************/
-
-	private boolean clockSynced = false;
-	private long clockOffset = 0;
 
 	private boolean adhocEnabled = false;
 
@@ -111,6 +108,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 	/***********************************************
 	 * Handle messages from other components and threads
 	 ***********************************************/
+	protected final static int ADHOC_ANNOUNCE_RECV = 4;
 	protected final static int ADHOC_PACKET_RECV = 4;
 
 	/**
@@ -123,7 +121,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 	 *            Location of vehicle 2
 	 * @return true is the link is viable, false if not
 	 */
-	private boolean linkIsViable(Location v1, AdhocAnnounce other) {
+	private boolean linkIsViable(Location v1, AdhocPacket other) {
 		Location v2 = other.getLocation();
 
 		if (v1 == null || v2 == null) {
@@ -215,11 +213,11 @@ public class RoadRunnerService extends Service implements LocationListener {
 		@Override
 		public void handleMessage(Message msg) {
 			switch (msg.what) {
-			case ADHOC_PACKET_RECV:
+			case ADHOC_ANNOUNCE_RECV:
 				if (!adhocEnabled) {
 					break;
 				}
-				AdhocAnnounce other = (AdhocAnnounce) msg.obj;
+				AdhocPacket other = (AdhocPacket) msg.obj;
 				long now = getTime();
 				log_nodisplay(String.format("Received UDP %s", other));
 
@@ -503,9 +501,9 @@ public class RoadRunnerService extends Service implements LocationListener {
 			return;
 		}
 
-		AdhocAnnounce p = new AdhocAnnounce(mId, mLoc);
+		AdhocPacket p = new AdhocPacket(mId, mLoc);
 
-		// AdhocAnnounce the state of our data link
+		// AdhocPacket the state of our data link
 		if (this.lastDataActivity + Globals.LAST_DATA_ACTIVITY_THRESHOLD < System
 				.currentTimeMillis()) {
 			p.dataActivity = tm.getDataActivity();
@@ -513,7 +511,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 			p.dataActivity = TelephonyManager.DATA_ACTIVITY_DORMANT;
 		}
 
-		// AdhocAnnounce what tokens we are offering
+		// AdhocPacket what tokens we are offering
 		p.tokensOffered = queueKeySet(this.offers);
 
 		p.triggerAnnounce = triggerAnnounce_;
@@ -557,17 +555,11 @@ public class RoadRunnerService extends Service implements LocationListener {
 	}
 
 	public void log_nodisplay(String message) {
-		String line = String.format("%d: %s", getTime(), message);
-		Log.i(TAG, line);
-
-		mainHandler.obtainMessage(MainActivity.LOG_NODISPLAY, line)
+		mainHandler.obtainMessage(MainActivity.LOG_NODISPLAY, message)
 				.sendToTarget();
 	}
 
 	public void log(String message) {
-		String line = String.format("%d: %s", getTime(), message);
-		Log.i(TAG, line);
-
 		mainHandler.obtainMessage(MainActivity.LOG, message).sendToTarget();
 	}
 
@@ -642,24 +634,25 @@ public class RoadRunnerService extends Service implements LocationListener {
 
 	/** Asynchronous background task for sending packets to the network */
 	public class SendPacketsTask extends
-			AsyncTask<AdhocAnnounce, Integer, Long> {
+			AsyncTask<AdhocPacket, Integer, Long> {
 		@Override
-		protected Long doInBackground(AdhocAnnounce... packets) {
+		protected Long doInBackground(AdhocPacket... packets) {
 			long count = packets.length;
 			long sent = 0;
 			for (int i = 0; i < count; i++) {
-				AdhocAnnounce adhocAnnounce = packets[i];
+				AdhocPacket adhocPacket = packets[i];
 
 				ByteArrayOutputStream bos = new ByteArrayOutputStream();
 				try {
 					ObjectOutput out = new ObjectOutputStream(bos);
-					out.writeObject(adhocAnnounce);
+					out.writeObject(adhocPacket);
 					out.close();
 					byte[] data = bos.toByteArray();
 					publishProgress((int) i + 1, (int) count);
 					aat.sendData(data);
 					sent++;
-					log_nodisplay("sent adhoc announcement");
+					log_nodisplay(String.format(
+							"sent adhoc %d bytes", data.length));
 				} catch (IOException e) {
 					log("error sending adhoc announcement:" + e.getMessage());
 				}
@@ -723,7 +716,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 
 		// Start the adhoc UDP announcement thread
 		log("Starting adhoc announce thread...");
-		aat = new AdhocAnnounceThread(myHandler, this);
+		aat = new AdhocPacketThread(myHandler, this);
 		aat.start();
 
 		// Start the adhoc TCP server thread
@@ -1035,18 +1028,19 @@ public class RoadRunnerService extends Service implements LocationListener {
 	 ***********************************************/
 
 	public long getTime() {
-		return System.currentTimeMillis() + this.clockOffset;
+		return MainActivity.getTime();
 	}
 
 	/** Location - location changed */
 	@Override
 	public void onLocationChanged(Location loc) {
 		// sync internal clock to GPS on first fix
-		if (!this.clockSynced) {
-			this.clockOffset = loc.getTime() - getTime();
-			this.clockSynced = true;
+		if (!MainActivity.clockSynced) {
+			MainActivity.clockOffset = loc.getTime()
+					- System.currentTimeMillis();
+			MainActivity.clockSynced = true;
 			log(String.format("CLOCK SYNCED TO GPS with offset %d",
-					this.clockOffset));
+					MainActivity.clockOffset));
 		}
 
 		this.mLoc = loc;

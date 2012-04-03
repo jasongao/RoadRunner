@@ -40,6 +40,10 @@ public class MainActivity extends Activity {
 	RoadRunnerService mService;
 	boolean mBound = false;
 
+	// GPS clock sync
+	public static boolean clockSynced = false;
+	public static long clockOffset = 0;
+
 	/***********************************************
 	 * Handler for messages from other components
 	 ***********************************************/
@@ -78,21 +82,27 @@ public class MainActivity extends Activity {
 
 	/** Log message and also display on screen */
 	public void log(String line) {
-		line = String.format("%s", line);
+		log_selectable(line, true);
+	}
+
+	/** Log message only to file. */
+	public void log_nodisplay(String line) {
+		log_selectable(line, false);
+	}
+
+	public void log_selectable(String line, boolean display) {
+		line = String.format("%d: %s", getTime(), line);
 		Log.i(TAG, line);
-		receivedMessages.add((String) line);
+		if (display) {
+			receivedMessages.add((String) line);
+		}
 		if (logWriter != null) {
 			logWriter.println((String) line);
 		}
 	}
 
-	/** Log message only to file. */
-	public void log_nodisplay(String line) {
-		line = String.format("%s", line);
-		Log.i(TAG, line);
-		if (logWriter != null) {
-			logWriter.println((String) line);
-		}
+	public static long getTime() {
+		return System.currentTimeMillis() + MainActivity.clockOffset;
 	}
 
 	/***********************************************
@@ -108,6 +118,7 @@ public class MainActivity extends Activity {
 		setContentView(R.layout.main);
 		findViewById(R.id.connect_button).setOnClickListener(mClicked);
 		findViewById(R.id.reset_button).setOnClickListener(mClicked);
+		findViewById(R.id.mark_log_button).setOnClickListener(mClicked);
 		findViewById(R.id.reserve_button_a).setOnClickListener(mClicked);
 		findViewById(R.id.reserve_button_b).setOnClickListener(mClicked);
 		findViewById(R.id.reserve_button_c).setOnClickListener(mClicked);
@@ -120,7 +131,8 @@ public class MainActivity extends Activity {
 		if (Environment.MEDIA_MOUNTED.equals(state)) {
 			// We can read and write the media
 			logFile = new File(Environment.getExternalStorageDirectory(),
-					String.format("roadrunner-%d.txt", System.currentTimeMillis()));
+					String.format("roadrunner-%d.txt",
+							System.currentTimeMillis()));
 			try {
 				logWriter = new PrintWriter(logFile);
 				log("Opened log file for writing");
@@ -209,6 +221,9 @@ public class MainActivity extends Activity {
 	private final OnClickListener mClicked = new OnClickListener() {
 		public void onClick(View v) {
 			switch (v.getId()) {
+			case R.id.mark_log_button:
+				log("MARK LOG BUTTON PRESSED.");
+				break;
 			case R.id.reserve_button_a:
 				if (mBound) {
 					mService.makeReservationRouteA();
@@ -235,6 +250,8 @@ public class MainActivity extends Activity {
 				if (mBound) {
 					mService.resetCloud();
 				}
+				break;
+			default:
 				break;
 			}
 		}
