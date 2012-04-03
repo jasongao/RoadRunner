@@ -75,6 +75,9 @@ public class RoadRunnerService extends Service implements LocationListener {
 	/** Reservations we can give away. Will be sent to cloud eventually. */
 	public Queue<ResRequest> offers;
 
+	/** Penalty reservations */
+	public Queue<ResRequest> penalties;
+
 	/** Pending GET RES_REQUESTS that can be sent to either cloud or to adhoc */
 	private Queue<ResRequest> getsPending;
 
@@ -450,6 +453,26 @@ public class RoadRunnerService extends Service implements LocationListener {
 			lastDataActivity = getTime();
 		}
 	};
+	
+	/** Periodic check for penalty reservations to clear */
+	private Runnable penaltyCheck = new Runnable() {
+		public void run() {
+			long now = getTime();
+
+			// send timed-out PUT requests to cloud
+			for (Iterator<ResRequest> it = penalties.iterator(); it.hasNext();) {
+				ResRequest req = it.next();
+				if (req.hardDeadline < now) {
+					log(String
+							.format("Penalty reservation expired, removing %s",
+									req.hardDeadline, req));
+					it.remove();
+				}
+			}
+
+			myHandler.postDelayed(this, Globals.REQUEST_PENALTY_CHECK_PERIOD);
+		}
+	};
 
 	/** Periodic check for GET requests that need to be sent to the cloud */
 	private Runnable cloudDirectGetRequestCheck = new Runnable() {
@@ -720,12 +743,14 @@ public class RoadRunnerService extends Service implements LocationListener {
 		this.reservationsInUse = new ConcurrentHashMap<String, ResRequest>();
 		this.getsPending = new ConcurrentLinkedQueue<ResRequest>();
 		this.offers = new ConcurrentLinkedQueue<ResRequest>();
+		this.penalties = new ConcurrentLinkedQueue<ResRequest>();
 
-		// Start periodic announcements for request deadline checking
+		// Start recurring runnables
 		myHandler.postDelayed(cloudDirectGetRequestCheck,
 				Globals.REQUEST_DEADLINE_CHECK_PERIOD);
 		myHandler.postDelayed(cloudDirectPutRequestCheck,
 				Globals.REQUEST_DEADLINE_CHECK_PERIOD);
+		myHandler.postDelayed(penaltyCheck, Globals.REQUEST_PENALTY_CHECK_PERIOD);
 
 		if (this.adhocEnabled) {
 
@@ -1060,9 +1085,15 @@ public class RoadRunnerService extends Service implements LocationListener {
 		// offer up old reservation
 		if (this.reservationsInUse.containsKey(oldRegion)) {
 			ResRequest oldRes = this.reservationsInUse.remove(oldRegion);
-			oldRes.hardDeadline = now
-					+ Globals.REQUEST_DIRECT_GET_DEADLINE_FROM_NOW;
-			this.offers.add(oldRes);
+			if (oldRes.type == ResRequest.PENALTY) {
+				// penalty res expires in 10 min
+				oldRes.hardDeadline = now + 600000;
+				this.penalties.add(oldRes);
+			} else {
+				oldRes.hardDeadline = now
+						+ Globals.REQUEST_DIRECT_GET_DEADLINE_FROM_NOW;
+				this.offers.add(oldRes);
+			}
 		}
 
 		// region transition, so check for reservation if necessary
@@ -1084,10 +1115,23 @@ public class RoadRunnerService extends Service implements LocationListener {
 			} else {
 				log("ERROR getting reservation from offer store, NULL.");
 			}
+		} else if (queueKeySet(penalties).contains(newRegion)) {
+			log(String
+					.format("Moved from %s to %s with GPS fix %s, reservation from previous penalty.",
+							oldRegion, newRegion, loc));
+			ResRequest res = queuePoll(penalties, newRegion);
+			if (res != null) {
+				this.reservationsInUse.put(newRegion, res);
+			} else {
+				log("ERROR getting reservation from penalty store, NULL.");
+			}
 		} else {
 			log(String
-					.format("Moved from %s to %s with GPS fix %s, no reservation, PENALTY.",
+					.format("Moved from %s to %s with GPS fix %s, no reservation, PENALTY reservation created.",
 							oldRegion, newRegion, loc));
+			ResRequest penaltyRes = new ResRequest(mId, ResRequest.PENALTY,
+					newRegion);
+			this.reservationsInUse.put(newRegion, penaltyRes);
 		}
 
 		updateDisplay();

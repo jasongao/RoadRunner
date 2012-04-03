@@ -18,9 +18,12 @@ public class Globals {
 	static final byte[] MY_PRIVATE_KEY = null; // TODO
 
 	/** Relay logic */
+	static final int REQUEST_PENALTY_VALID_PERIOD = 600000; // 10 min
+	static final int REQUEST_PENALTY_CHECK_PERIOD = 60000; // 1 min
 	static final int REQUEST_DEADLINE_CHECK_PERIOD = 500;
-	static final int REQUEST_DIRECT_PUT_DEADLINE_FROM_NOW = 60000;
-	static final int REQUEST_DIRECT_GET_DEADLINE_FROM_NOW = 10000;
-	static final int REQUEST_RELAY_GET_DEADLINE_FROM_NOW = 3000;
+	static final int REQUEST_DIRECT_PUT_DEADLINE_FROM_NOW = 60000; // TODO
+	static final int REQUEST_DIRECT_GET_DEADLINE_FROM_NOW = 10000; // TODO
+	static final int REQUEST_RELAY_GET_DEADLINE_FROM_NOW = 3000; // TODO
+	
 	static final int LAST_DATA_ACTIVITY_THRESHOLD = 8000;
 }

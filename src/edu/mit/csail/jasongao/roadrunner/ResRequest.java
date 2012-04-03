@@ -10,6 +10,7 @@ public class ResRequest implements Serializable {
 	/** Type of interaction */
 	public static final int RES_GET = 1;
 	public static final int RES_PUT = 4;
+	public static final int PENALTY = 5;
 	public static final int DEBUG_RESET = 13;
 
 	/** Always populated */
