@@ -108,7 +108,6 @@ public class RoadRunnerService extends Service implements LocationListener {
 	/***********************************************
 	 * Handle messages from other components and threads
 	 ***********************************************/
-	protected final static int ADHOC_ANNOUNCE_RECV = 4;
 	protected final static int ADHOC_PACKET_RECV = 4;
 
 	/**
@@ -213,7 +212,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 		@Override
 		public void handleMessage(Message msg) {
 			switch (msg.what) {
-			case ADHOC_ANNOUNCE_RECV:
+			case ADHOC_PACKET_RECV:
 				if (!adhocEnabled) {
 					break;
 				}
@@ -633,8 +632,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 	 ***********************************************/
 
 	/** Asynchronous background task for sending packets to the network */
-	public class SendPacketsTask extends
-			AsyncTask<AdhocPacket, Integer, Long> {
+	public class SendPacketsTask extends AsyncTask<AdhocPacket, Integer, Long> {
 		@Override
 		protected Long doInBackground(AdhocPacket... packets) {
 			long count = packets.length;
@@ -652,7 +650,8 @@ public class RoadRunnerService extends Service implements LocationListener {
 					aat.sendData(data);
 					sent++;
 					log_nodisplay(String.format(
-							"sent adhoc %d bytes", data.length));
+							"sent %d byte adhoc packet type %d", data.length,
+							adhocPacket.type));
 				} catch (IOException e) {
 					log("error sending adhoc announcement:" + e.getMessage());
 				}
@@ -714,20 +713,6 @@ public class RoadRunnerService extends Service implements LocationListener {
 		log(String.format("Service started with adhocEnabled %b",
 				this.adhocEnabled));
 
-		// Start the adhoc UDP announcement thread
-		log("Starting adhoc announce thread...");
-		aat = new AdhocPacketThread(myHandler, this);
-		aat.start();
-
-		// Start the adhoc TCP server thread
-		log("Starting adhoc server thread...");
-		ast = new AdhocServerThread(mainHandler, this);
-		ast.start();
-
-		// fix issues with unsigned byte going to signed int
-		// for now just keep last octet of ip addresses low (under 127)
-		mId = aat.getLocalAddress().getAddress()[3];
-
 		// Set up regions
 		this.regions = experimentARegions();
 
@@ -742,9 +727,26 @@ public class RoadRunnerService extends Service implements LocationListener {
 		myHandler.postDelayed(cloudDirectPutRequestCheck,
 				Globals.REQUEST_DEADLINE_CHECK_PERIOD);
 
-		// Start recurring UDP adhoc announcements
-		if (adhocEnabled) {
+		if (this.adhocEnabled) {
+
+			// Start the adhoc UDP announcement thread
+			log("Starting adhoc announce thread...");
+			aat = new AdhocPacketThread(myHandler, this);
+			aat.start();
+
+			// Start the adhoc TCP server thread
+			log("Starting adhoc server thread...");
+			ast = new AdhocServerThread(mainHandler, this);
+			ast.start();
+
+			// fix issues with unsigned byte going to signed int
+			// for now just keep last octet of ip addresses low (under 127)
+			mId = aat.getLocalAddress().getAddress()[3];
+
+			// Start recurring UDP adhoc announcements
 			myHandler.post(adhocAnnounceR);
+		} else {
+			mId = 255; // cloud-only doesn't need unique IDs
 		}
 
 		updateDisplay();
