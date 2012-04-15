@@ -7,11 +7,17 @@ import java.util.Arrays;
 public class ResRequest implements Serializable {
 	private static final long serialVersionUID = 101L;
 
-	/** Type of interaction */
+	/** Type of reservation request */
 	public static final int RES_GET = 1;
 	public static final int RES_PUT = 4;
 	public static final int PENALTY = 5;
 	public static final int DEBUG_RESET = 13;
+	
+	/** accessType */
+	public static final int CLOUD_DIRECT = 1;
+	public static final int CLOUD_RELAY = 2;
+	public static final int ADHOC_DIRECT = 3;
+	
 
 	/** Always populated */
 	public int type;
@@ -20,6 +26,7 @@ public class ResRequest implements Serializable {
 	public long softDeadline;
 	public long hardDeadline;
 	public boolean done;
+	public int accessType;
 
 	/** Populated for RES_GET done=true */
 	public long issued, expires;

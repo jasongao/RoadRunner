@@ -56,6 +56,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 	 ***********************************************/
 
 	private boolean adhocEnabled = false;
+	private boolean relayEnabled = false;
 
 	/**
 	 * When was the cellular data link last active? It goes dormant after 10
@@ -231,28 +232,37 @@ public class RoadRunnerService extends Service implements LocationListener {
 					break;
 				}
 
-				for (Iterator<ResRequest> it = getsPending.iterator(); it
-						.hasNext();) {
-					ResRequest req = it.next();
+				if (other.type == AdhocPacket.TRANSFER_TOKEN) {
+					// TODO
 
-					// try to get token from other vehicle?
-					if (other.tokensOffered.contains(req.regionId)) {
-						log(String.format("Other vehicle %d offers %s, GET %s",
-								other.src, other.tokensOffered, req.regionId));
-						it.remove(); // fix ConcurrentModificationException
-						new ResRequestTask().execute(req, "192.168.42."
-								+ other.src);
-					}
+				} else if (other.type == AdhocPacket.ANNOUNCE) {
+					for (Iterator<ResRequest> it = getsPending.iterator(); it
+							.hasNext();) {
+						ResRequest req = it.next();
 
-					// try to relay through other vehicle?
-					else if (other.dataActivity != TelephonyManager.DATA_ACTIVITY_DORMANT
-							&& req.softDeadline < now) {
-						log(String
-								.format("Request soft deadline %d expired, relaying through vehicle %d to cloud: %s",
-										req.softDeadline, other.src, req));
-						getsPending.remove(req);
-						new ResRequestTask().execute(req, "192.168.42."
-								+ other.src);
+						// try to get token from other vehicle?
+						if (other.tokensOffered.contains(req.regionId)) {
+							log(String
+									.format("Other vehicle %d offers %s, I want %s, GET %s",
+											other.src, other.tokensOffered,
+											queueKeySet(getsPending),
+											req.regionId));
+							it.remove(); // fix ConcurrentModificationException
+							new ResRequestTask().execute(req, "192.168.42."
+									+ other.src);
+						}
+
+						// try to relay through other vehicle?
+						else if (relayEnabled
+								&& other.dataActivity != TelephonyManager.DATA_ACTIVITY_DORMANT
+								&& req.softDeadline < now) {
+							log(String
+									.format("Request soft deadline %d expired, relaying through vehicle %d to cloud: %s",
+											req.softDeadline, other.src, req));
+							getsPending.remove(req);
+							new ResRequestTask().execute(req, "192.168.42."
+									+ other.src);
+						}
 					}
 				}
 
@@ -424,7 +434,10 @@ public class RoadRunnerService extends Service implements LocationListener {
 			else if (req.type == ResRequest.RES_PUT) {
 				/* PUT SUCCESSFUL */
 				if (req.done) {
-					// req.completed = getTime();
+					req.completed = getTime();
+					log(String.format(
+							"PUT request for %s completed after %d ms",
+							req.regionId, req.completed - req.created));
 				}
 				/* PUT FAILED */
 				else {
@@ -453,7 +466,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 			lastDataActivity = getTime();
 		}
 	};
-	
+
 	/** Periodic check for penalty reservations to clear */
 	private Runnable penaltyCheck = new Runnable() {
 		public void run() {
@@ -463,9 +476,9 @@ public class RoadRunnerService extends Service implements LocationListener {
 			for (Iterator<ResRequest> it = penalties.iterator(); it.hasNext();) {
 				ResRequest req = it.next();
 				if (req.hardDeadline < now) {
-					log(String
-							.format("Penalty reservation expired, removing %s",
-									req.hardDeadline, req));
+					log(String.format(
+							"Penalty reservation expired, removing %s",
+							req.hardDeadline, req));
 					it.remove();
 				}
 			}
@@ -522,6 +535,8 @@ public class RoadRunnerService extends Service implements LocationListener {
 		if (!this.adhocEnabled) {
 			return;
 		}
+
+		myHandler.removeCallbacks(adhocAnnounceR);
 
 		AdhocPacket p = new AdhocPacket(mId, mLoc);
 
@@ -750,7 +765,8 @@ public class RoadRunnerService extends Service implements LocationListener {
 				Globals.REQUEST_DEADLINE_CHECK_PERIOD);
 		myHandler.postDelayed(cloudDirectPutRequestCheck,
 				Globals.REQUEST_DEADLINE_CHECK_PERIOD);
-		myHandler.postDelayed(penaltyCheck, Globals.REQUEST_PENALTY_CHECK_PERIOD);
+		myHandler.postDelayed(penaltyCheck,
+				Globals.REQUEST_PENALTY_CHECK_PERIOD);
 
 		if (this.adhocEnabled) {
 
