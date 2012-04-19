@@ -37,7 +37,6 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.PowerManager;
 import android.telephony.TelephonyManager;
-import android.util.Log;
 
 public class RoadRunnerService extends Service implements LocationListener {
 	public static final String TAG = "RoadRunnerService";
@@ -56,11 +55,9 @@ public class RoadRunnerService extends Service implements LocationListener {
 	 ***********************************************/
 
 	private boolean adhocEnabled = false;
-	private boolean relayEnabled = false;
 
 	/**
-	 * When was the cellular data link last active? It goes dormant after 10
-	 * seconds of inactivity
+	 * When was the cellular data access? It goes dormant after 10 seconds
 	 */
 	private long lastDataActivity = 0;
 
@@ -82,9 +79,9 @@ public class RoadRunnerService extends Service implements LocationListener {
 	/** Pending GET RES_REQUESTS that can be sent to either cloud or to adhoc */
 	private Queue<ResRequest> getsPending;
 
-	/********
-	 * Helpers
-	 ********/
+	/***********************************************
+	 * Queue helpers
+	 ***********************************************/
 
 	public static Set<String> queueKeySet(Queue<ResRequest> q) {
 		Set<String> keys = new HashSet<String>();
@@ -114,9 +111,69 @@ public class RoadRunnerService extends Service implements LocationListener {
 	 ***********************************************/
 	protected final static int ADHOC_PACKET_RECV = 4;
 
+	public final Handler myHandler = new Handler() {
+		@Override
+		public void handleMessage(Message msg) {
+			switch (msg.what) {
+			case ADHOC_PACKET_RECV:
+				if (!adhocEnabled) {
+					break;
+				}
+				AdhocPacket other = (AdhocPacket) msg.obj;
+				long now = getTime();
+				log_nodisplay(String.format("Received UDP %s", other));
+
+				if (other.triggerAnnounce) {
+					adhocAnnounce(false);
+				}
+
+				if (!linkIsViable(mLoc, other)) {
+					break;
+				}
+
+				if (other.type == AdhocPacket.TRANSFER_TOKEN) {
+					// TODO
+
+				} else if (other.type == AdhocPacket.ANNOUNCE) {
+					for (Iterator<ResRequest> it = getsPending.iterator(); it
+							.hasNext();) {
+						ResRequest req = it.next();
+
+						// try to get token from other vehicle?
+						if (other.tokensOffered.contains(req.regionId)) {
+							log(String
+									.format("Other vehicle %d offers %s, I want %s, GET %s",
+											other.src, other.tokensOffered,
+											queueKeySet(getsPending),
+											req.regionId));
+							it.remove(); // fix ConcurrentModificationException
+							new ResRequestTask().execute(req, "192.168.42."
+									+ other.src);
+						}
+
+						// try to relay through other vehicle?
+						// DEPRECATED: doesn't work well currently
+						else if (Globals.RELAY_ENABLED
+								&& other.dataActivity != TelephonyManager.DATA_ACTIVITY_DORMANT
+								&& req.softDeadline < now) {
+							log(String
+									.format("Request soft deadline %d expired, relaying through vehicle %d to cloud: %s",
+											req.softDeadline, other.src, req));
+							getsPending.remove(req);
+							new ResRequestTask().execute(req, "192.168.42."
+									+ other.src);
+						}
+					}
+				}
+
+				break;
+			}
+		}
+	};
+
 	/**
 	 * Determine whether two vehicle's location fixes indicate that a WiFi TCP
-	 * link can be attempted over the next Globals.LINK_LIFETIME_THRESHOLD secs
+	 * link can be sustained over the next Globals.LINK_LIFETIME_THRESHOLD secs
 	 * 
 	 * @param v1
 	 *            Location of vehicle 1
@@ -211,65 +268,6 @@ public class RoadRunnerService extends Service implements LocationListener {
 				"Link viable: %.1f meters apart. (moving apart)", distance));
 		return false;
 	}
-
-	public final Handler myHandler = new Handler() {
-		@Override
-		public void handleMessage(Message msg) {
-			switch (msg.what) {
-			case ADHOC_PACKET_RECV:
-				if (!adhocEnabled) {
-					break;
-				}
-				AdhocPacket other = (AdhocPacket) msg.obj;
-				long now = getTime();
-				log_nodisplay(String.format("Received UDP %s", other));
-
-				if (other.triggerAnnounce) {
-					adhocAnnounce(false);
-				}
-
-				if (!linkIsViable(mLoc, other)) {
-					break;
-				}
-
-				if (other.type == AdhocPacket.TRANSFER_TOKEN) {
-					// TODO
-
-				} else if (other.type == AdhocPacket.ANNOUNCE) {
-					for (Iterator<ResRequest> it = getsPending.iterator(); it
-							.hasNext();) {
-						ResRequest req = it.next();
-
-						// try to get token from other vehicle?
-						if (other.tokensOffered.contains(req.regionId)) {
-							log(String
-									.format("Other vehicle %d offers %s, I want %s, GET %s",
-											other.src, other.tokensOffered,
-											queueKeySet(getsPending),
-											req.regionId));
-							it.remove(); // fix ConcurrentModificationException
-							new ResRequestTask().execute(req, "192.168.42."
-									+ other.src);
-						}
-
-						// try to relay through other vehicle?
-						else if (relayEnabled
-								&& other.dataActivity != TelephonyManager.DATA_ACTIVITY_DORMANT
-								&& req.softDeadline < now) {
-							log(String
-									.format("Request soft deadline %d expired, relaying through vehicle %d to cloud: %s",
-											req.softDeadline, other.src, req));
-							getsPending.remove(req);
-							new ResRequestTask().execute(req, "192.168.42."
-									+ other.src);
-						}
-					}
-				}
-
-				break;
-			}
-		}
-	};
 
 	/** Send an ResRequest to a TCP/IP endpoint (whether peer or cloud) */
 	public class ResRequestTask extends AsyncTask<Object, Integer, ResRequest> {
@@ -530,6 +528,10 @@ public class RoadRunnerService extends Service implements LocationListener {
 			myHandler.postDelayed(this, Globals.REQUEST_DEADLINE_CHECK_PERIOD);
 		}
 	};
+
+	/***********************************************
+	 * Adhoc announcements
+	 ***********************************************/
 
 	private void adhocAnnounce(boolean triggerAnnounce_) {
 		if (!this.adhocEnabled) {
@@ -1091,18 +1093,21 @@ public class RoadRunnerService extends Service implements LocationListener {
 		// did we enter a new region?
 		String oldRegion = this.mRegion;
 		String newRegion = getRegion(this.regions, loc);
-		if (newRegion == oldRegion) {
-			return; // do nothing if we haven't changed regions
+		if (!oldRegion.equals(newRegion)) {
+			regionTransition(oldRegion, newRegion);
 		}
-		this.mRegion = newRegion;
+		updateDisplay();
+	}
 
+	public void regionTransition(String oldRegion, String newRegion) {
+		this.mRegion = newRegion;
 		long now = getTime();
 
-		// offer up old reservation
+		// Offer old reservation
 		if (this.reservationsInUse.containsKey(oldRegion)) {
 			ResRequest oldRes = this.reservationsInUse.remove(oldRegion);
 			if (oldRes.type == ResRequest.PENALTY) {
-				// penalty res expires in 10 min
+				// Penalty reservation expires in 10 min
 				oldRes.hardDeadline = now + 600000;
 				this.penalties.add(oldRes);
 			} else {
@@ -1112,19 +1117,18 @@ public class RoadRunnerService extends Service implements LocationListener {
 			}
 		}
 
-		// region transition, so check for reservation if necessary
+		// Check for reservation
 		if ("FREE".equals(newRegion)) {
-			log(String
-					.format("Moved from %s to %s with GPS fix %s, no reservation needed.",
-							oldRegion, newRegion, loc));
+			log(String.format("Moved from %s to %s, no reservation needed.",
+					oldRegion, newRegion));
 		} else if (this.reservationsInUse.containsKey(newRegion)) {
-			log(String
-					.format("Moved from %s to %s with GPS fix %s, reservation from in-use store.",
-							oldRegion, newRegion, loc));
+			log(String.format(
+					"Moved from %s to %s, reservation from in-use store.",
+					oldRegion, newRegion));
 		} else if (queueKeySet(offers).contains(newRegion)) {
-			log(String
-					.format("Moved from %s to %s with GPS fix %s, reservation from offer store.",
-							oldRegion, newRegion, loc));
+			log(String.format(
+					"Moved from %s to %s, reservation from offer store.",
+					oldRegion, newRegion));
 			ResRequest res = queuePoll(offers, newRegion);
 			if (res != null) {
 				this.reservationsInUse.put(newRegion, res);
@@ -1133,8 +1137,8 @@ public class RoadRunnerService extends Service implements LocationListener {
 			}
 		} else if (queueKeySet(penalties).contains(newRegion)) {
 			log(String
-					.format("Moved from %s to %s with GPS fix %s, reservation from previous penalty.",
-							oldRegion, newRegion, loc));
+					.format("Moved from %s to %s, penalty already incurred within last 10 minutes.",
+							oldRegion, newRegion));
 			ResRequest res = queuePoll(penalties, newRegion);
 			if (res != null) {
 				this.reservationsInUse.put(newRegion, res);
@@ -1143,14 +1147,12 @@ public class RoadRunnerService extends Service implements LocationListener {
 			}
 		} else {
 			log(String
-					.format("Moved from %s to %s with GPS fix %s, no reservation, PENALTY reservation created.",
-							oldRegion, newRegion, loc));
+					.format("Moved from %s to %s, no reservation, PENALTY reservation created.",
+							oldRegion, newRegion));
 			ResRequest penaltyRes = new ResRequest(mId, ResRequest.PENALTY,
 					newRegion);
 			this.reservationsInUse.put(newRegion, penaltyRes);
 		}
-
-		updateDisplay();
 	}
 
 	/** Location - provider disabled */

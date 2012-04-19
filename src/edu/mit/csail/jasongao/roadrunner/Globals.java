@@ -9,11 +9,13 @@ public class Globals {
 	static final int ADHOC_MAX_PACKET_SIZE = 32768; // bytes
 	static final int ADHOC_ANNOUNCE_PORT = 4200;
 	static final long ADHOC_ANNOUNCE_PERIOD = 2000 * 1;
+	
+	static boolean RELAY_ENABLED = false;
 
 	/** Cloud parameters */
 	static final String CLOUD_HOST = "128.30.87.195";
 	static final int CLOUD_PORT = 50000;
-	static final int CLOUD_SOCKET_TIMEOUT = 5000;
+	static final int CLOUD_SOCKET_TIMEOUT = 3000;
 	static final byte[] CLOUD_PUBLIC_KEY = null; // TODO
 	static final byte[] MY_PRIVATE_KEY = null; // TODO
 

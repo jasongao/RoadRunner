@@ -24,9 +24,16 @@ public class AdhocServerConnection implements Runnable {
 		this.rrs = rrs_;
 	}
 
+	public void log(String line) {
+		rrs.log(String.format("%d - %s - %s", this.id,
+				this.mSocket.getRemoteSocketAddress(), line));
+	}
+
 	@Override
 	public void run() {
 		Socket clientSocket = mSocket;
+
+		log("Connected.");
 
 		try {
 			BufferedReader clientReader = new BufferedReader(
@@ -39,7 +46,9 @@ public class AdhocServerConnection implements Runnable {
 			// log("Received request: " + request);
 			String[] parts = request.split(" ");
 			if (parts.length != 3) {
-				rrs.log("Improperly formatted request line, exiting...");
+				log(String.format(
+						"Improperly formatted request line from %s, exiting.",
+						clientSocket.getRemoteSocketAddress()));
 				mSocket.close();
 				return;
 			}
@@ -54,7 +63,9 @@ public class AdhocServerConnection implements Runnable {
 				ResRequest offer = RoadRunnerService.queuePoll(rrs.offers,
 						regionId);
 				if (offer != null) {
-					rrs.log("Responding to GET request with an offered reservation.");
+					log(String
+							.format("Responding to GET request from %d with an offered reservation.",
+									otherId));
 					response = String.format("GET 200 OK\r\n%s\r\n%s\r\n\r\n",
 							offer.tokenString, offer.signature);
 					clientWriter.write(response);
@@ -63,8 +74,9 @@ public class AdhocServerConnection implements Runnable {
 					rrs.updateDisplay();
 				}
 				// relay request if cellular link is not dormant
-				else if (rrs.tm.getDataActivity() != TelephonyManager.DATA_ACTIVITY_DORMANT) {
-					rrs.log(String.format(
+				else if (Globals.RELAY_ENABLED
+						&& rrs.tm.getDataActivity() != TelephonyManager.DATA_ACTIVITY_DORMANT) {
+					log(String.format(
 							"Relaying vehicle %d GET request to cloud.",
 							otherId));
 					Socket cloudSocket = new Socket();
@@ -89,8 +101,9 @@ public class AdhocServerConnection implements Runnable {
 						String relayResponse;
 						relayResponse = cloudReader.readLine();
 
-						rrs.log("Relaying cloud response: " + relayResponse);
-						
+						log(String.format("Relaying cloud response to %d: %s",
+								otherId, relayResponse));
+
 						if ("GET 200 OK".equals(relayResponse)) {
 							clientWriter.write(relayResponse + "\r\n");
 							clientWriter.write(cloudReader.readLine() + "\r\n");
@@ -105,7 +118,7 @@ public class AdhocServerConnection implements Runnable {
 						rrs.myHandler.post(rrs.updateLastDataActivity);
 
 					} catch (IOException e) {
-						rrs.log("Unexpected I/O error or natural shutdown: "
+						log("Unexpected I/O error or natural shutdown: "
 								+ e.toString());
 					} finally {
 						try {
@@ -126,7 +139,7 @@ public class AdhocServerConnection implements Runnable {
 				}
 				// otherwise respond failure
 				else {
-					rrs.log("Responding to request, no token locally available.");
+					log("Responding to request, no token locally available.");
 					response = String.format("GET 404 ERROR\r\n");
 					clientWriter.write(response);
 					clientWriter.flush();
