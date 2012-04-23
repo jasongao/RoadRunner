@@ -164,6 +164,9 @@ public class MainActivity extends Activity implements OnInitListener {
 			((CheckBox) findViewById(R.id.ondemand_checkbox)).setChecked(false);
 			doBindService();
 			say("Exit the parking lot and turn left onto Main Street.");
+			
+			// After 7 minutes, end the experiment
+			myHandler.postDelayed(endExperiment, Globals.EXPERIMENT_LENGTH);
 			break;
 		case 2:
 			// Start service with adhoc on, prereserve
@@ -171,6 +174,9 @@ public class MainActivity extends Activity implements OnInitListener {
 			((CheckBox) findViewById(R.id.ondemand_checkbox)).setChecked(false);
 			doBindService();
 			say("Exit the parking lot and turn left onto Main Street.");
+			
+			// After 7 minutes, end the experiment
+			myHandler.postDelayed(endExperiment, Globals.EXPERIMENT_LENGTH);
 			break;
 		case 3:
 			// Start service with adhoc on, prereserve
@@ -178,14 +184,14 @@ public class MainActivity extends Activity implements OnInitListener {
 			((CheckBox) findViewById(R.id.ondemand_checkbox)).setChecked(true);
 			doBindService();
 			say("Exit the parking lot and turn left onto Main Street.");
+			
+			// After 7 minutes, end the experiment
+			myHandler.postDelayed(endExperiment, Globals.EXPERIMENT_LENGTH);
 			break;
 		default:
 			say("No experiments left to do. Please return to the starting point.");
 			break;
 		}
-
-		// After 7 minutes, end the experiment
-		myHandler.postDelayed(endExperiment, Globals.EXPERIMENT_LENGTH);
 	}
 
 	/***********************************************
@@ -319,12 +325,14 @@ public class MainActivity extends Activity implements OnInitListener {
 				myHandler.removeCallbacks(startExperiment);
 				myHandler.removeCallbacks(endExperiment);
 				if (!experimentsRunning) {
+					experimentsRunning = true;
 					myHandler.post(startExperiment);
-					((Button) findViewById(R.id.connect_button))
+					((Button) findViewById(R.id.start_stop_button))
 							.setText("STOP experiments");
 				} else {
+					experimentsRunning = false;
 					myHandler.post(endExperiment);
-					((Button) findViewById(R.id.connect_button))
+					((Button) findViewById(R.id.start_stop_button))
 							.setText("START experiments");
 				}
 
