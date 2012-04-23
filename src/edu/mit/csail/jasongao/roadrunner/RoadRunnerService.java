@@ -634,11 +634,6 @@ public class RoadRunnerService extends Service implements LocationListener {
 	public void makeReservationRouteA() {
 		log(String.format("Making ResRequests for route A"));
 		makeRequest(new ResRequest(mId, ResRequest.RES_GET, "Vassar-1"));
-	}
-
-	public void makeReservationRouteA2() {
-		log(String.format("Making ResRequests for route A"));
-		makeRequest(new ResRequest(mId, ResRequest.RES_GET, "Vassar-1"));
 		makeRequest(new ResRequest(mId, ResRequest.RES_GET, "Main-1"));
 		makeRequest(new ResRequest(mId, ResRequest.RES_GET, "Main-2"));
 		makeRequest(new ResRequest(mId, ResRequest.RES_GET, "Main-3"));

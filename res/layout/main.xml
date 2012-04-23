@@ -64,29 +64,19 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal" >
 
-        <Button
-            android:id="@+id/reserve_button_a"
+        <EditText
+            android:id="@+id/start_editText"
             android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:text="Route A" />
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:inputType="number" />
 
         <Button
-            android:id="@+id/reserve_button_b"
+            android:id="@+id/start_stop_button"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:text="Route B" />
+            android:text="START experiments" />
 
-        <Button
-            android:id="@+id/reserve_button_c"
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:text="Route C" />
-
-        <Button
-            android:id="@+id/mark_log_button"
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:text="Mark Log" />
     </LinearLayout>
 
     <ListView
@@ -109,6 +99,12 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Adhoc" />
+        
+        <CheckBox
+            android:id="@+id/ondemand_checkbox"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="On-Demand" />
 
         <Button
             android:id="@+id/connect_button"

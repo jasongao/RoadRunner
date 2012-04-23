@@ -9,7 +9,7 @@ public class Globals {
 	static final int ADHOC_MAX_PACKET_SIZE = 32768; // bytes
 	static final int ADHOC_ANNOUNCE_PORT = 4200;
 	static final long ADHOC_ANNOUNCE_PERIOD = 2000 * 1;
-	
+
 	static boolean RELAY_ENABLED = false;
 
 	/** Cloud parameters */
@@ -26,6 +26,8 @@ public class Globals {
 	static final int REQUEST_DIRECT_PUT_DEADLINE_FROM_NOW = 60000; // TODO
 	static final int REQUEST_DIRECT_GET_DEADLINE_FROM_NOW = 10000; // TODO
 	static final int REQUEST_RELAY_GET_DEADLINE_FROM_NOW = 3000; // TODO
-	
+
 	static final int LAST_DATA_ACTIVITY_THRESHOLD = 8000;
+	static final long EXPERIMENT_START_DELAY = 1 * 60 * 1000;
+	static final long EXPERIMENT_LENGTH = 7 * 60 * 1000;
 }

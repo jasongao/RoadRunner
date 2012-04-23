@@ -9,7 +9,6 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 
 import android.telephony.TelephonyManager;
-import android.util.Log;
 
 public class AdhocServerConnection implements Runnable {
 	public static final String TAG = "AdhocServerConnection";

@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import android.app.Activity;
 import android.content.ComponentName;
@@ -15,6 +16,8 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
+import android.speech.tts.TextToSpeech;
+import android.speech.tts.TextToSpeech.OnInitListener;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -26,7 +29,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import edu.mit.csail.jasongao.roadrunner.RoadRunnerService.LocalBinder;
 
-public class MainActivity extends Activity {
+public class MainActivity extends Activity implements OnInitListener {
 	final static private String TAG = "MainActivity";
 
 	// UI
@@ -39,6 +42,9 @@ public class MainActivity extends Activity {
 	// RoadRunnerService
 	RoadRunnerService mService;
 	boolean mBound = false;
+
+	// TTS
+	TextToSpeech mTts;
 
 	// GPS clock sync
 	public static boolean clockSynced = false;
@@ -105,6 +111,83 @@ public class MainActivity extends Activity {
 		return System.currentTimeMillis() + MainActivity.clockOffset;
 	}
 
+	public void say(String msg) {
+		if (mTts != null) {
+			mTts.speak(msg, TextToSpeech.QUEUE_ADD, null);
+		}
+	}
+
+	/***********************************************
+	 * Experiments
+	 ***********************************************/
+
+	private boolean experimentsRunning = false;
+	private int experimentNumber = 1;
+
+	public Runnable endExperiment = new Runnable() {
+		public void run() {
+			log(String.format("------ ENDING EXPERIMENT %d ------",
+					experimentNumber));
+			say("End of experiment. Please return to the starting point.");
+
+			// Reset server
+			mService.resetCloud();
+
+			// Stop service
+			doUnbindService();
+
+			// Wait 1 minute before starting next experiment
+			log(String.format("------ END OF EXPERIMENT %d ------",
+					experimentNumber));
+			experimentNumber++;
+			myHandler.postDelayed(startExperiment,
+					Globals.EXPERIMENT_START_DELAY);
+		}
+	};
+
+	// Cloud-only experiment
+	public Runnable startExperiment = new Runnable() {
+		public void run() {
+			startExperimentNum();
+		}
+	};
+
+	public void startExperimentNum() {
+		log(String.format("------ STARTING EXPERIMENT %d ------",
+				experimentNumber));
+		say(String.format("Starting experiment %d.", experimentNumber));
+
+		switch (experimentNumber) {
+		case 1:
+			// Start service with adhoc off
+			((CheckBox) findViewById(R.id.adhoc_checkbox)).setChecked(false);
+			((CheckBox) findViewById(R.id.ondemand_checkbox)).setChecked(false);
+			doBindService();
+			say("Exit the parking lot and turn left onto Main Street.");
+			break;
+		case 2:
+			// Start service with adhoc on, prereserve
+			((CheckBox) findViewById(R.id.adhoc_checkbox)).setChecked(true);
+			((CheckBox) findViewById(R.id.ondemand_checkbox)).setChecked(false);
+			doBindService();
+			say("Exit the parking lot and turn left onto Main Street.");
+			break;
+		case 3:
+			// Start service with adhoc on, prereserve
+			((CheckBox) findViewById(R.id.adhoc_checkbox)).setChecked(true);
+			((CheckBox) findViewById(R.id.ondemand_checkbox)).setChecked(true);
+			doBindService();
+			say("Exit the parking lot and turn left onto Main Street.");
+			break;
+		default:
+			say("No experiments left to do. Please return to the starting point.");
+			break;
+		}
+
+		// After 7 minutes, end the experiment
+		myHandler.postDelayed(endExperiment, Globals.EXPERIMENT_LENGTH);
+	}
+
 	/***********************************************
 	 * Android lifecycle
 	 ***********************************************/
@@ -118,10 +201,7 @@ public class MainActivity extends Activity {
 		setContentView(R.layout.main);
 		findViewById(R.id.connect_button).setOnClickListener(mClicked);
 		findViewById(R.id.reset_button).setOnClickListener(mClicked);
-		findViewById(R.id.mark_log_button).setOnClickListener(mClicked);
-		findViewById(R.id.reserve_button_a).setOnClickListener(mClicked);
-		findViewById(R.id.reserve_button_b).setOnClickListener(mClicked);
-		findViewById(R.id.reserve_button_c).setOnClickListener(mClicked);
+		findViewById(R.id.start_stop_button).setOnClickListener(mClicked);
 
 		receivedMessages = new ArrayAdapter<String>(this, R.layout.message);
 		((ListView) findViewById(R.id.msgList)).setAdapter(receivedMessages);
@@ -145,6 +225,15 @@ public class MainActivity extends Activity {
 		} else {
 			// One of many other states, but we can neither read nor write
 		}
+
+		mTts = new TextToSpeech(this, this);
+		mTts.setLanguage(Locale.US);
+		// mTts.setLanguage(Locale.ENGLISH);
+	}
+
+	@Override
+	public void onInit(int arg0) {
+		// TODO Auto-generated method stub
 	}
 
 	@Override
@@ -153,6 +242,11 @@ public class MainActivity extends Activity {
 
 		logWriter.flush();
 		logWriter.close();
+
+		if (mTts != null) {
+			mTts.stop();
+			mTts.shutdown();
+		}
 
 		super.onDestroy();
 	}
@@ -221,24 +315,21 @@ public class MainActivity extends Activity {
 	private final OnClickListener mClicked = new OnClickListener() {
 		public void onClick(View v) {
 			switch (v.getId()) {
-			case R.id.mark_log_button:
-				log("MARK LOG BUTTON PRESSED.");
-				break;
-			case R.id.reserve_button_a:
-				if (mBound) {
-					mService.makeReservationRouteA();
+			case R.id.start_stop_button:
+				myHandler.removeCallbacks(startExperiment);
+				myHandler.removeCallbacks(endExperiment);
+				if (!experimentsRunning) {
+					myHandler.post(startExperiment);
+					((Button) findViewById(R.id.connect_button))
+							.setText("STOP experiments");
+				} else {
+					myHandler.post(endExperiment);
+					((Button) findViewById(R.id.connect_button))
+							.setText("START experiments");
 				}
+
 				break;
-			case R.id.reserve_button_b:
-				if (mBound) {
-					mService.makeReservationRouteB();
-				}
-				break;
-			case R.id.reserve_button_c:
-				if (mBound) {
-					mService.makeReservationRouteC();
-				}
-				break;
+
 			case R.id.connect_button:
 				if (!mBound) {
 					doBindService();
@@ -246,11 +337,13 @@ public class MainActivity extends Activity {
 					doUnbindService();
 				}
 				break;
+
 			case R.id.reset_button:
 				if (mBound) {
 					mService.resetCloud();
 				}
 				break;
+
 			default:
 				break;
 			}
