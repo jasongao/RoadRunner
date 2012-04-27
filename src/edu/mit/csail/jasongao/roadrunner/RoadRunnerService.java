@@ -36,6 +36,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.PowerManager;
+import android.speech.tts.TextToSpeech;
 import android.telephony.TelephonyManager;
 
 public class RoadRunnerService extends Service implements LocationListener {
@@ -45,6 +46,13 @@ public class RoadRunnerService extends Service implements LocationListener {
 	PowerManager.WakeLock wl = null;
 	LocationManager lm;
 	TelephonyManager tm;
+	TextToSpeech mTts = null;
+
+	public void say(String msg) {
+		if (mTts != null) {
+			mTts.speak(msg, TextToSpeech.QUEUE_ADD, null);
+		}
+	}
 
 	// Communication threads
 	private AdhocPacketThread aat;
@@ -55,6 +63,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 	 ***********************************************/
 
 	private boolean adhocEnabled = false;
+	private boolean onDemand = false;
 	private boolean directionCcw = false;
 
 	/**
@@ -617,6 +626,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 	 ***********************************************/
 
 	public void makeRequest(ResRequest r1) {
+		log(String.format("Adding request for %s.", r1.regionId));
 		if (this.adhocEnabled) {
 			getsPending.add(r1); // queue up requests
 			adhocAnnounce(true); // ask nearby vehicles to announce their offers
@@ -744,13 +754,18 @@ public class RoadRunnerService extends Service implements LocationListener {
 		stop();
 	}
 
-	public synchronized void start(boolean adhocEnabled_, boolean directionCcw_) {
+	public synchronized void start(TextToSpeech mTts_, boolean adhocEnabled_,
+			boolean onDemand_, boolean directionCcw_) {
+		this.mTts = mTts_;
 		this.adhocEnabled = adhocEnabled_;
+		this.onDemand = onDemand_;
 		this.directionCcw = directionCcw_;
 
-		log(String.format(
-				"Service started with adhocEnabled %b, directionCcw %b",
-				this.adhocEnabled, this.directionCcw));
+		log(String
+				.format("Service started with adhocEnabled %b, onDemand %b, directionCcw %b",
+						this.adhocEnabled, this.onDemand, this.directionCcw));
+
+		// say("Service started.");
 
 		// Set up regions
 		this.regions = experimentARegions();
@@ -866,14 +881,22 @@ public class RoadRunnerService extends Service implements LocationListener {
 
 		// Mass-1
 		r = new Region("Mass-1");
+		r.addVertex(42.362678310030105, -71.0995620694809);
+		r.addVertex(42.3629954083118, -71.09918656021881);
+		r.addVertex(42.36179042632724, -71.09720172554779);
+		r.addVertex(42.361322696830854, -71.09736265808868);
+		rs.add(r);
+
+		// Mass-2
+		r = new Region("Mass-2");
 		r.addVertex(42.36114036066024, -71.09588207871246);
 		r.addVertex(42.360791542163774, -71.09660091072845);
 		r.addVertex(42.36106901157985, -71.0969335046463);
 		r.addVertex(42.36156052582344, -71.09657945305634);
 		rs.add(r);
 
-		// Mass-2
-		r = new Region("Mass-2");
+		// Mass-3
+		r = new Region("Mass-3");
 		r.addVertex(42.36035551632001, -71.09489502579498);
 		r.addVertex(42.3601731773427, -71.09523834854889);
 		r.addVertex(42.360577493491306, -71.095978638237);
@@ -882,19 +905,25 @@ public class RoadRunnerService extends Service implements LocationListener {
 
 		// Albany-1
 		r = new Region("Albany-1");
-		r.addVertex(42.36172700558263, -71.09442295700836);
-		r.addVertex(42.3614891772202, -71.09410109192658);
-		r.addVertex(42.360823253016186, -71.09553875595856);
-		r.addVertex(42.361084866938036, -71.09590353638458);
+		r.addVertex(42.36087874696942, -71.09530272156525);
+		r.addVertex(42.361227564981775, -71.0956353154831);
+		r.addVertex(42.362678310030105, -71.092556139534);
+		r.addVertex(42.362527687785665, -71.09185876519012);
 		rs.add(r);
 
-		// Albany-2
-		r = new Region("Albany-2");
-		r.addVertex(42.362678310030105, -71.09243812233734);
-		r.addVertex(42.36253561528121, -71.09191240937042);
-		r.addVertex(42.36180628150339, -71.09342517525482);
-		r.addVertex(42.36223436974708, -71.09344663292694);
-		rs.add(r);
+		/*
+		 * // Albany-1 r = new Region("Albany-1");
+		 * r.addVertex(42.36172700558263, -71.09442295700836);
+		 * r.addVertex(42.3614891772202, -71.09410109192658);
+		 * r.addVertex(42.360823253016186, -71.09553875595856);
+		 * r.addVertex(42.361084866938036, -71.09590353638458); rs.add(r);
+		 * 
+		 * // Albany-2 r = new Region("Albany-2");
+		 * r.addVertex(42.362678310030105, -71.09243812233734);
+		 * r.addVertex(42.36253561528121, -71.09191240937042);
+		 * r.addVertex(42.36180628150339, -71.09342517525482);
+		 * r.addVertex(42.36223436974708, -71.09344663292694); rs.add(r);
+		 */
 
 		// Portland-1
 		r = new Region("Portland-1");
@@ -904,24 +933,32 @@ public class RoadRunnerService extends Service implements LocationListener {
 		r.addVertex(42.36198861574153, -71.09409036309052);
 		rs.add(r);
 
-		// Main-1
+		// Main-2
 		r = new Region("Main-1");
+		r.addVertex(42.36321737615673, -71.09918656021881);
+		r.addVertex(42.36356618118581, -71.09917583138275);
+		r.addVertex(42.36342348845344, -71.0969335046463);
+		r.addVertex(42.363042972916034, -71.09699787766266);
+		rs.add(r);
+
+		// Main-2
+		r = new Region("Main-2");
 		r.addVertex(42.36318566651262, -71.09384359986115);
 		r.addVertex(42.36278929461076, -71.09392943054962);
 		r.addVertex(42.36297162599619, -71.09643997818756);
 		r.addVertex(42.36336799674776, -71.09641852051544);
 		rs.add(r);
 
-		// Main-2
-		r = new Region("Main-2");
+		// Main-3
+		r = new Region("Main-3");
 		r.addVertex(42.36300333574834, -71.09216990143585);
 		r.addVertex(42.36271794740286, -71.09249176651764);
 		r.addVertex(42.36277343968266, -71.09333934456635);
 		r.addVertex(42.363106392332284, -71.09324278504181);
 		rs.add(r);
 
-		// Main-3
-		r = new Region("Main-3");
+		// Main-4
+		r = new Region("Main-4");
 		r.addVertex(42.36289235154579, -71.09035672814178);
 		r.addVertex(42.36259110772208, -71.09038891464996);
 		r.addVertex(42.36264660011392, -71.09166564614105);
@@ -1079,13 +1116,12 @@ public class RoadRunnerService extends Service implements LocationListener {
 	@Override
 	public void onLocationChanged(Location loc) {
 		// sync internal clock to GPS on first fix
-		if (!MainActivity.clockSynced) {
-			MainActivity.clockOffset = loc.getTime()
-					- System.currentTimeMillis();
-			MainActivity.clockSynced = true;
-			log(String.format("CLOCK SYNCED TO GPS with offset %d",
-					MainActivity.clockOffset));
-		}
+		/*
+		 * if (!MainActivity.clockSynced) { MainActivity.clockOffset =
+		 * loc.getTime() - System.currentTimeMillis(); MainActivity.clockSynced
+		 * = true; log(String.format("CLOCK SYNCED TO GPS with offset %d",
+		 * MainActivity.clockOffset)); }
+		 */
 
 		this.mLoc = loc;
 
@@ -1116,8 +1152,18 @@ public class RoadRunnerService extends Service implements LocationListener {
 			}
 		}
 
+		Set<String> freeRegions = new HashSet<String>();
+		freeRegions.add("FREE");
+		freeRegions.add("Mass-1");
+		freeRegions.add("Mass-2");
+		freeRegions.add("Mass-3");
+		freeRegions.add("Main-1");
+		freeRegions.add("Main-2");
+		freeRegions.add("Main-3");
+		freeRegions.add("Main-4");
+
 		// Check for reservation
-		if ("FREE".equals(newRegion)) {
+		if (freeRegions.contains(newRegion)) {
 			log(String.format("Moved from %s to %s, no reservation needed.",
 					oldRegion, newRegion));
 		} else if (this.reservationsInUse.containsKey(newRegion)) {
@@ -1151,6 +1197,102 @@ public class RoadRunnerService extends Service implements LocationListener {
 			ResRequest penaltyRes = new ResRequest(mId, ResRequest.PENALTY,
 					newRegion);
 			this.reservationsInUse.put(newRegion, penaltyRes);
+		}
+
+		// Speaking navigation logic
+		// CW
+		if (!directionCcw) { // Main-Vassar-Mass
+			if ("Main-1".equals(newRegion)
+					&& (queueKeySet(offers).contains("Windsor-1") || this.reservationsInUse
+							.containsKey("Windsor-1"))) {
+				say("Turn right onto Windsor, then continue to Mass Avenue.");
+			} else if ("Main-2".equals(newRegion)
+					&& (queueKeySet(offers).contains("Albany-1") || this.reservationsInUse
+							.containsKey("Albany-1"))) {
+				say("Turn right onto Albany, then continue to Mass Avenue.");
+			} else if ("Main-4".equals(newRegion)) {
+				say("Turn right onto Vassar, then continue to Mass Avenue.");
+			}
+		} else { // Mass-Vassar-Main
+			if ("Mass-1".equals(newRegion)
+					&& (queueKeySet(offers).contains("Windsor-1") || this.reservationsInUse
+							.containsKey("Windsor-1"))) {
+				say("Turn left onto Windsor, then continue to Main Street.");
+			} else if ("Mass-2".equals(newRegion)
+					&& (queueKeySet(offers).contains("Albany-1") || this.reservationsInUse
+							.containsKey("Albany-1"))) {
+				say("Turn left onto Albany, then continue to Main Street.");
+			} else if ("Mass-3".equals(newRegion)) {
+				say("Turn left onto Vassar ahead, then continue to Main Street.");
+			}
+		}
+		
+		/** Request making logic */
+
+		// ON-DEMAND logic valid for cloud and for on-demand adhoc
+		if (!this.adhocEnabled || (this.adhocEnabled && this.onDemand)) {
+			if (!directionCcw) { // Main-Vassar-Mass
+				// GET logic
+				if ("Mass-1".equals(newRegion)) {
+					log("request Windsor-1");
+					makeRequest(new ResRequest(mId, ResRequest.RES_GET,
+							"Windsor-1"));
+				} else if ("Main-1".equals(newRegion)) {
+					log("request Albany-1");
+					makeRequest(new ResRequest(mId, ResRequest.RES_GET,
+							"Albany-1"));
+				} else if ("Main-2".equals(newRegion)) {
+					log("request Vassar-1");
+					makeRequest(new ResRequest(mId, ResRequest.RES_GET,
+							"Vassar-1"));
+				}
+				// PUT logic
+				else if ("Windsor-1".equals(newRegion)) {
+					// PUT all except Windsor-1
+				} else if ("Albany-1".equals(newRegion)) {
+					// PUT all except Albany-1
+				} else if ("Vassar-1".equals(newRegion)) {
+					// PUT all except Vassar-1
+				}
+			} else { // Mass-Vassar-Main
+				if ("Main-1".equals(newRegion)) {
+					log("request Windsor-1");
+					makeRequest(new ResRequest(mId, ResRequest.RES_GET,
+							"Windsor-1"));
+				} else if ("Mass-1".equals(newRegion)) {
+					log("request Albany-1");
+					makeRequest(new ResRequest(mId, ResRequest.RES_GET,
+							"Albany-1"));
+				} else if ("Mass-2".equals(newRegion)) {
+					log("request Vassar-1");
+					makeRequest(new ResRequest(mId, ResRequest.RES_GET,
+							"Vassar-1"));
+				}
+				// PUT logic
+				else if ("Windsor-1".equals(newRegion)) {
+					// PUT all except Windsor-1
+				} else if ("Albany-1".equals(newRegion)) {
+					// PUT all except Albany-1
+				} else if ("Vassar-1".equals(newRegion)) {
+					// PUT all except Vassar-1
+				}
+			}
+		}
+		// PRERESERVE logic
+		else {
+			if (!directionCcw) { // Main-Vassar-Mass
+				if ("Main-1".equals(newRegion)) {
+					// request Windsor-1
+					// request Albany-1
+					// request Vassar-1
+				}
+			} else { // Mass-Vassar-Main
+				if ("Mass-1".equals(newRegion)) {
+					// request Windsor-1
+					// request Albany-1
+					// request Vassar-1
+				}
+			}
 		}
 	}
 

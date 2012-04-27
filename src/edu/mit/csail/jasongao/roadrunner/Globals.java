@@ -20,23 +20,28 @@ public class Globals {
 	static final byte[] MY_PRIVATE_KEY = null; // TODO
 
 	/** Relay logic */
-	static final int REQUEST_PENALTY_VALID_PERIOD = 600000; // 10 min
-	static final int REQUEST_PENALTY_CHECK_PERIOD = 60000; // 1 min
-	static final int REQUEST_DEADLINE_CHECK_PERIOD = 500;
-	static final int REQUEST_DIRECT_PUT_DEADLINE_FROM_NOW = 60000; // TODO
-	static final int REQUEST_DIRECT_GET_DEADLINE_FROM_NOW = 10000; // TODO
-	static final int REQUEST_RELAY_GET_DEADLINE_FROM_NOW = 3000; // TODO
+	static int REQUEST_PENALTY_VALID_PERIOD = 600000; // 10 min
+	static int REQUEST_PENALTY_CHECK_PERIOD = 60000; // 1 min
+	static int REQUEST_DEADLINE_CHECK_PERIOD = 500;
+	static int REQUEST_DIRECT_PUT_DEADLINE_FROM_NOW = 60000; // TODO
+	static int REQUEST_DIRECT_GET_DEADLINE_FROM_NOW = 10000; // TODO
+	static int REQUEST_RELAY_GET_DEADLINE_FROM_NOW = 3000; // deprecated
 
 	static final int LAST_DATA_ACTIVITY_THRESHOLD = 8000;
 
 	/** Automated experiment progression */
-	static final long EXPT_START_DELAY = 1 * 15 * 1000;
-	static final long RESET_SERVER_DELAY = 1 * 15 * 1000;
-	static final long EXPT_LENGTH = 1 * 60 * 1000; // TODO back to 10 min
+	static long EXPT_START_DELAY = 1 * 15 * 1000;
+	static long RESET_SERVER_DELAY = 1 * 15 * 1000;
+	static long EXPT_LENGTH = 1 * 60 * 1000; // TODO back to 10 min
 
 	/** Times */
-	static final long FRIDAY_10_AM = 1335535200;
+	//static final long FRIDAY_10_AM = 1335538800L * 1000 - 3600*1000; // 10am?
+	//static final long FRIDAY_NOON = 1335546000L * 1000 - 3600*1000; // 12pm?
 	static final long FIVE_MINUTES = 5 * 60 * 1000;
 	static final long TEN_MINUTES = 10 * 60 * 1000;
+	// static final long FRIDAY_10_20_AM = 1335540000 * 1000;
+	// static final long FRIDAY_11_35_AM = 1335544500 * 1000;
+	static final long FRIDAY_10_20_AM = 1335540000L * 1000L - 3600*1000; // DST
+	static final long FRIDAY_11_35_AM = 1335544500L * 1000L - 3600*1000; // DST
 
 }
