@@ -35,13 +35,14 @@ public class Globals {
 	static long EXPT_LENGTH = 1 * 60 * 1000; // TODO back to 10 min
 
 	/** Times */
-	//static final long FRIDAY_10_AM = 1335538800L * 1000 - 3600*1000; // 10am?
-	//static final long FRIDAY_NOON = 1335546000L * 1000 - 3600*1000; // 12pm?
+	// static final long FRIDAY_10_AM = 1335538800L * 1000 - 3600*1000; // 10am?
+	// static final long FRIDAY_NOON = 1335546000L * 1000 - 3600*1000; // 12pm?
 	static final long FIVE_MINUTES = 5 * 60 * 1000;
 	static final long TEN_MINUTES = 10 * 60 * 1000;
 	// static final long FRIDAY_10_20_AM = 1335540000 * 1000;
 	// static final long FRIDAY_11_35_AM = 1335544500 * 1000;
-	static final long FRIDAY_10_20_AM = 1335540000L * 1000L - 3600*1000; // DST
-	static final long FRIDAY_11_35_AM = 1335544500L * 1000L - 3600*1000; // DST
+	// static final long FRIDAY_10_20_AM = 1335540000L * 1000L - 3600*1000;
+	static final long FRIDAY_10_20_AM = System.currentTimeMillis() + 60000;
+	static final long FRIDAY_11_35_AM = 1335544500L * 1000L - 3600 * 1000; // DST
 
 }

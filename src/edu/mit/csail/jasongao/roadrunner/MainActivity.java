@@ -134,30 +134,7 @@ public class MainActivity extends Activity implements OnInitListener {
 			case 0:
 				say("Continue driving along the default route.");
 				experimentNumber++;
-				// Wait until 10:20am to start first experiment
-				if (firstSet) {
-					long timeUntilFirstExperiment = Globals.FRIDAY_10_20_AM
-							- System.currentTimeMillis();
-					log(String.format("%d - %d = %d msecs until 10:20AM",
-							Globals.FRIDAY_10_20_AM,
-							System.currentTimeMillis(),
-							timeUntilFirstExperiment));
-					myHandler.postDelayed(resetServerR,
-							timeUntilFirstExperiment);
-					say(String.format("Synchornizing in %5d minutes.",
-							(int) (timeUntilFirstExperiment / 1000 / 60)));
-				} else { // wait until 11:35 am to start second set
-					long timeUntilSecondExperiment = Globals.FRIDAY_11_35_AM
-							- System.currentTimeMillis();
-					log(String.format("%d - %d = %d msecs until 11:35AM",
-							Globals.FRIDAY_11_35_AM,
-							System.currentTimeMillis(),
-							timeUntilSecondExperiment));
-					myHandler.postDelayed(resetServerR,
-							timeUntilSecondExperiment);
-					say(String.format("Synchornizing in %5d minutes.",
-							(int) (timeUntilSecondExperiment / 1000 / 60)));
-				}
+				myHandler.postDelayed(resetServerR, Globals.RESET_SERVER_DELAY);
 				break;
 			case 1:
 				say("Continue driving along the default route.");
@@ -234,13 +211,38 @@ public class MainActivity extends Activity implements OnInitListener {
 
 		switch (experimentNumber) {
 		case 0:
-			// Go to endExperimentR for setup
-			myHandler.post(endExperimentR);
+			// DEP: Go to endExperimentR for setup
+			experimentNumber++;
+			
+			// Wait until 10:20am to start first experiment
+			if (firstSet) {
+				long timeUntilFirstExperiment = Globals.FRIDAY_10_20_AM
+						- System.currentTimeMillis();
+				log(String.format("%d - %d = %d msecs until 10:20AM",
+						Globals.FRIDAY_10_20_AM,
+						System.currentTimeMillis(),
+						timeUntilFirstExperiment));
+				myHandler.postDelayed(resetServerR,
+						timeUntilFirstExperiment);
+				say(String.format("Synchornizing in %5d minutes.",
+						(int) (timeUntilFirstExperiment / 1000 / 60)));
+			} else { // wait until 11:35 am to start second set
+				long timeUntilSecondExperiment = Globals.FRIDAY_11_35_AM
+						- System.currentTimeMillis();
+				log(String.format("%d - %d = %d msecs until 11:35AM",
+						Globals.FRIDAY_11_35_AM,
+						System.currentTimeMillis(),
+						timeUntilSecondExperiment));
+				myHandler.postDelayed(resetServerR,
+						timeUntilSecondExperiment);
+				say(String.format("Synchornizing in %5d minutes.",
+						(int) (timeUntilSecondExperiment / 1000 / 60)));
+			}
 		case 1:
 			// Adhoc OFF, 4G Cloud-only, Trial 1
 			// say("WiFi off. Cloud only. Trial 1.");
-			Globals.REQUEST_DIRECT_PUT_DEADLINE_FROM_NOW = 60000;
-			Globals.REQUEST_DIRECT_GET_DEADLINE_FROM_NOW = 30000;
+			Globals.REQUEST_DIRECT_PUT_DEADLINE_FROM_NOW = 2000;
+			Globals.REQUEST_DIRECT_GET_DEADLINE_FROM_NOW = 2000;
 			((CheckBox) findViewById(R.id.adhoc_checkbox)).setChecked(false);
 			((CheckBox) findViewById(R.id.ondemand_checkbox)).setChecked(false);
 			doBindService();
@@ -253,8 +255,8 @@ public class MainActivity extends Activity implements OnInitListener {
 		case 2:
 			// Adhoc OFF, 4G Cloud-only, Trial 2
 			// say("WiFi off. Cloud only. Trial 2.");
-			Globals.REQUEST_DIRECT_PUT_DEADLINE_FROM_NOW = 60000;
-			Globals.REQUEST_DIRECT_GET_DEADLINE_FROM_NOW = 30000;
+			Globals.REQUEST_DIRECT_PUT_DEADLINE_FROM_NOW = 2000;
+			Globals.REQUEST_DIRECT_GET_DEADLINE_FROM_NOW = 2000;
 			((CheckBox) findViewById(R.id.adhoc_checkbox)).setChecked(false);
 			((CheckBox) findViewById(R.id.ondemand_checkbox)).setChecked(false);
 			doBindService();
@@ -318,8 +320,8 @@ public class MainActivity extends Activity implements OnInitListener {
 		case 7:
 			// Adhoc ON, SUPERDENSE Tokens, Trial 1
 			// say("WiFi on. Super dense tokens. Trial 1.");
-			Globals.REQUEST_DIRECT_PUT_DEADLINE_FROM_NOW = 10*60*1000;
-			Globals.REQUEST_DIRECT_PUT_DEADLINE_FROM_NOW = 10*60*1000;
+			Globals.REQUEST_DIRECT_PUT_DEADLINE_FROM_NOW = 10 * 60 * 1000;
+			Globals.REQUEST_DIRECT_PUT_DEADLINE_FROM_NOW = 10 * 60 * 1000;
 			((CheckBox) findViewById(R.id.adhoc_checkbox)).setChecked(true);
 			((CheckBox) findViewById(R.id.ondemand_checkbox)).setChecked(true);
 			doBindService();

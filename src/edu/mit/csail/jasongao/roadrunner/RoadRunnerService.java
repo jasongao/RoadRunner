@@ -626,10 +626,12 @@ public class RoadRunnerService extends Service implements LocationListener {
 	 ***********************************************/
 
 	public void makeRequest(ResRequest r1) {
-		log(String.format("Adding request for %s.", r1.regionId));
+		String newRegion = r1.regionId;
+		log(String.format("Adding new pending request for %s.", r1.regionId));
 		if (this.adhocEnabled) {
 			getsPending.add(r1); // queue up requests
-			adhocAnnounce(true); // ask nearby vehicles to announce their offers
+			adhocAnnounce(true); // ask nearby vehicles to announce their
+									// offers
 		} else {
 			// send directly to cloud
 			new ResRequestTask().execute(r1, Globals.CLOUD_HOST);
@@ -1152,6 +1154,11 @@ public class RoadRunnerService extends Service implements LocationListener {
 		}
 	}
 
+	public boolean canDriveOn(String newRegion) {
+		return queueKeySet(offers).contains(newRegion)
+				|| this.reservationsInUse.containsKey(newRegion);
+	}
+
 	public void regionTransition(String oldRegion, String newRegion) {
 		this.mRegion = newRegion;
 		long now = getTime();
@@ -1206,36 +1213,30 @@ public class RoadRunnerService extends Service implements LocationListener {
 			this.reservationsInUse.put(newRegion, penaltyRes);
 		}
 
-		// Speaking navigation logic
-		// CW
-		if (!directionCcw) { // Main-Vassar-Mass
-			if ("Main-1".equals(newRegion)
-					&& (queueKeySet(offers).contains("Windsor-1") || this.reservationsInUse
-							.containsKey("Windsor-1"))) {
+		/** Navigation speech logic */
+		if (!directionCcw) { // CW Main-Vassar-Mass
+			if ("Main-1".equals(newRegion) && canDriveOn("Windsor-1")) {
 				say("Turn right onto Windsor, then continue to Mass Avenue.");
-			} else if ("Main-2".equals(newRegion)
-					&& (queueKeySet(offers).contains("Albany-1") || this.reservationsInUse
-							.containsKey("Albany-1"))) {
+			}
+			if ("Main-2".equals(newRegion) && canDriveOn("Albany-2")) {
 				say("Turn right onto Albany, then continue to Mass Avenue.");
-			} else if ("Main-4".equals(newRegion)) {
+			}
+			if ("Main-4".equals(newRegion)) {
 				say("Turn right onto Vassar, then continue to Mass Avenue.");
 			}
-		} else { // Mass-Vassar-Main
-			if ("Mass-1".equals(newRegion)
-					&& (queueKeySet(offers).contains("Windsor-1") || this.reservationsInUse
-							.containsKey("Windsor-1"))) {
+		} else { // CCW Mass-Vassar-Main
+			if ("Mass-1".equals(newRegion) && canDriveOn("Windsor-1")) {
 				say("Turn left onto Windsor, then continue to Main Street.");
-			} else if ("Mass-2".equals(newRegion)
-					&& (queueKeySet(offers).contains("Albany-1") || this.reservationsInUse
-							.containsKey("Albany-1"))) {
+			}
+			if ("Mass-2".equals(newRegion) && canDriveOn("Albany-1")) {
 				say("Turn left onto Albany, then continue to Main Street.");
-			} else if ("Mass-3".equals(newRegion)) {
-				say("Turn left onto Vassar ahead, then continue to Main Street.");
+			}
+			if ("Mass-3".equals(newRegion)) {
+				say("Turn left onto Vassar, then continue to Main Street.");
 			}
 		}
 
 		/** Request making logic */
-
 		// ON-DEMAND ADHOC and CLOUD-ONLY reservation logic
 		if (!this.adhocEnabled || (this.adhocEnabled && this.onDemand)) {
 			if (!directionCcw) { // Main-Vassar-Mass
@@ -1244,14 +1245,16 @@ public class RoadRunnerService extends Service implements LocationListener {
 					getsPending.clear();
 					makeRequest(new ResRequest(mId, ResRequest.RES_GET,
 							"Windsor-1"));
-				} else if ("Main-1".equals(newRegion)) {
+				} else if ("Main-1".equals(newRegion)
+						&& !canDriveOn("Windsor-1")) {
 					log("Cleared old pending GETs.");
 					getsPending.clear();
 					makeRequest(new ResRequest(mId, ResRequest.RES_GET,
 							"Albany-1"));
 					makeRequest(new ResRequest(mId, ResRequest.RES_GET,
 							"Albany-2"));
-				} else if ("Main-2".equals(newRegion)) {
+				} else if ("Main-2".equals(newRegion)
+						&& !canDriveOn("Albany-1")) {
 					log("Cleared old pending GETs.");
 					getsPending.clear();
 					makeRequest(new ResRequest(mId, ResRequest.RES_GET,
@@ -1269,14 +1272,16 @@ public class RoadRunnerService extends Service implements LocationListener {
 					getsPending.clear();
 					makeRequest(new ResRequest(mId, ResRequest.RES_GET,
 							"Windsor-1"));
-				} else if ("Mass-1".equals(newRegion)) {
+				} else if ("Mass-1".equals(newRegion)
+						&& !canDriveOn("Windsor-1")) {
 					log("Cleared old pending GETs.");
 					getsPending.clear();
 					makeRequest(new ResRequest(mId, ResRequest.RES_GET,
 							"Albany-1"));
 					makeRequest(new ResRequest(mId, ResRequest.RES_GET,
 							"Albany-2"));
-				} else if ("Mass-2".equals(newRegion)) {
+				} else if ("Mass-2".equals(newRegion)
+						&& !canDriveOn("Albany-1")) {
 					log("Cleared old pending GETs.");
 					getsPending.clear();
 					makeRequest(new ResRequest(mId, ResRequest.RES_GET,
@@ -1319,8 +1324,9 @@ public class RoadRunnerService extends Service implements LocationListener {
 			}
 		}
 
-		// PUT logic
-		// Offer unnecessary reservations once we're on a reserved stretch.
+		/** PUT and/or offer logic */
+		// Offer / PUT unnecessary reservations once we're on a reserved
+		// stretch.
 		if ("Windsor-1".equals(newRegion)) {
 			log("Cleared old pending GETs.");
 			getsPending.clear();
