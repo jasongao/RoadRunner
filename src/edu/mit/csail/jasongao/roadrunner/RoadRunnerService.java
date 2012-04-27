@@ -55,6 +55,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 	 ***********************************************/
 
 	private boolean adhocEnabled = false;
+	private boolean directionCcw = false;
 
 	/**
 	 * When was the cellular data access? It goes dormant after 10 seconds
@@ -743,10 +744,13 @@ public class RoadRunnerService extends Service implements LocationListener {
 		stop();
 	}
 
-	public synchronized void start(boolean adhocEnabled_) {
+	public synchronized void start(boolean adhocEnabled_, boolean directionCcw_) {
 		this.adhocEnabled = adhocEnabled_;
-		log(String.format("Service started with adhocEnabled %b",
-				this.adhocEnabled));
+		this.directionCcw = directionCcw_;
+
+		log(String.format(
+				"Service started with adhocEnabled %b, directionCcw %b",
+				this.adhocEnabled, this.directionCcw));
 
 		// Set up regions
 		this.regions = experimentARegions();

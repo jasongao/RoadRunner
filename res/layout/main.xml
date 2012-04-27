@@ -76,7 +76,6 @@
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:text="START experiments" />
-
     </LinearLayout>
 
     <ListView
@@ -98,13 +97,19 @@
             android:id="@+id/adhoc_checkbox"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Adhoc" />
-        
+            android:text="WiFi" />
+
         <CheckBox
             android:id="@+id/ondemand_checkbox"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="On-Demand" />
+            android:text="On-D" />
+
+        <CheckBox
+            android:id="@+id/direction_checkbox"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="CCW" />
 
         <Button
             android:id="@+id/connect_button"

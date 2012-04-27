@@ -373,7 +373,8 @@ public class MainActivity extends Activity implements OnInitListener {
 
 			// Start the service
 			CheckBox adhocCheckBox = (CheckBox) findViewById(R.id.adhoc_checkbox);
-			mService.start(adhocCheckBox.isChecked());
+			CheckBox dirCheckBox = (CheckBox) findViewById(R.id.direction_checkbox);
+			mService.start(adhocCheckBox.isChecked(), dirCheckBox.isChecked());
 		}
 
 		/** If service disconnects -unexpectedly- / crashes */
