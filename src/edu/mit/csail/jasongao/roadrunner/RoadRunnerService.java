@@ -903,27 +903,29 @@ public class RoadRunnerService extends Service implements LocationListener {
 		r.addVertex(42.36077568673155, -71.0955816713028);
 		rs.add(r);
 
+		/*
+		 * Albany-1-full r = new Region("Albany-1");
+		 * r.addVertex(42.36087874696942, -71.09530272156525);
+		 * r.addVertex(42.361227564981775, -71.0956353154831);
+		 * r.addVertex(42.362678310030105, -71.092556139534);
+		 * r.addVertex(42.362527687785665, -71.09185876519012); rs.add(r);
+		 */
+
 		// Albany-1
 		r = new Region("Albany-1");
-		r.addVertex(42.36087874696942, -71.09530272156525);
-		r.addVertex(42.361227564981775, -71.0956353154831);
-		r.addVertex(42.362678310030105, -71.092556139534);
-		r.addVertex(42.362527687785665, -71.09185876519012);
+		r.addVertex(42.36172700558263, -71.09442295700836);
+		r.addVertex(42.3614891772202, -71.09410109192658);
+		r.addVertex(42.360823253016186, -71.09553875595856);
+		r.addVertex(42.361084866938036, -71.09590353638458);
 		rs.add(r);
 
-		/*
-		 * // Albany-1 r = new Region("Albany-1");
-		 * r.addVertex(42.36172700558263, -71.09442295700836);
-		 * r.addVertex(42.3614891772202, -71.09410109192658);
-		 * r.addVertex(42.360823253016186, -71.09553875595856);
-		 * r.addVertex(42.361084866938036, -71.09590353638458); rs.add(r);
-		 * 
-		 * // Albany-2 r = new Region("Albany-2");
-		 * r.addVertex(42.362678310030105, -71.09243812233734);
-		 * r.addVertex(42.36253561528121, -71.09191240937042);
-		 * r.addVertex(42.36180628150339, -71.09342517525482);
-		 * r.addVertex(42.36223436974708, -71.09344663292694); rs.add(r);
-		 */
+		// Albany-2
+		r = new Region("Albany-2");
+		r.addVertex(42.362678310030105, -71.09243812233734);
+		r.addVertex(42.36253561528121, -71.09191240937042);
+		r.addVertex(42.36180628150339, -71.09342517525482);
+		r.addVertex(42.36223436974708, -71.09344663292694);
+		rs.add(r);
 
 		// Portland-1
 		r = new Region("Portland-1");
@@ -1134,11 +1136,8 @@ public class RoadRunnerService extends Service implements LocationListener {
 		updateDisplay();
 	}
 
-	public void regionTransition(String oldRegion, String newRegion) {
-		this.mRegion = newRegion;
+	public void offerReservationIfInUse(String oldRegion) {
 		long now = getTime();
-
-		// Offer old reservation
 		if (this.reservationsInUse.containsKey(oldRegion)) {
 			ResRequest oldRes = this.reservationsInUse.remove(oldRegion);
 			if (oldRes.type == ResRequest.PENALTY) {
@@ -1151,6 +1150,14 @@ public class RoadRunnerService extends Service implements LocationListener {
 				this.offers.add(oldRes);
 			}
 		}
+	}
+
+	public void regionTransition(String oldRegion, String newRegion) {
+		this.mRegion = newRegion;
+		long now = getTime();
+
+		// Offer old reservation
+		offerReservationIfInUse(oldRegion);
 
 		Set<String> freeRegions = new HashSet<String>();
 		freeRegions.add("FREE");
@@ -1226,73 +1233,118 @@ public class RoadRunnerService extends Service implements LocationListener {
 				say("Turn left onto Vassar ahead, then continue to Main Street.");
 			}
 		}
-		
+
 		/** Request making logic */
 
-		// ON-DEMAND logic valid for cloud and for on-demand adhoc
+		// ON-DEMAND ADHOC and CLOUD-ONLY reservation logic
 		if (!this.adhocEnabled || (this.adhocEnabled && this.onDemand)) {
 			if (!directionCcw) { // Main-Vassar-Mass
-				// GET logic
 				if ("Mass-1".equals(newRegion)) {
-					log("request Windsor-1");
+					log("Cleared old pending GETs.");
+					getsPending.clear();
 					makeRequest(new ResRequest(mId, ResRequest.RES_GET,
 							"Windsor-1"));
 				} else if ("Main-1".equals(newRegion)) {
-					log("request Albany-1");
+					log("Cleared old pending GETs.");
+					getsPending.clear();
 					makeRequest(new ResRequest(mId, ResRequest.RES_GET,
 							"Albany-1"));
+					makeRequest(new ResRequest(mId, ResRequest.RES_GET,
+							"Albany-2"));
 				} else if ("Main-2".equals(newRegion)) {
-					log("request Vassar-1");
+					log("Cleared old pending GETs.");
+					getsPending.clear();
 					makeRequest(new ResRequest(mId, ResRequest.RES_GET,
 							"Vassar-1"));
 				}
-				// PUT logic
-				else if ("Windsor-1".equals(newRegion)) {
-					// PUT all except Windsor-1
-				} else if ("Albany-1".equals(newRegion)) {
-					// PUT all except Albany-1
-				} else if ("Vassar-1".equals(newRegion)) {
-					// PUT all except Vassar-1
+				// extra logic for clearing old GETs.
+				else if ("Mass-2".equals(newRegion)
+						|| "Mass-3".equals(newRegion)) {
+					log("Cleared old pending GETs.");
+					getsPending.clear();
 				}
 			} else { // Mass-Vassar-Main
 				if ("Main-1".equals(newRegion)) {
-					log("request Windsor-1");
+					log("Cleared old pending GETs.");
+					getsPending.clear();
 					makeRequest(new ResRequest(mId, ResRequest.RES_GET,
 							"Windsor-1"));
 				} else if ("Mass-1".equals(newRegion)) {
-					log("request Albany-1");
+					log("Cleared old pending GETs.");
+					getsPending.clear();
 					makeRequest(new ResRequest(mId, ResRequest.RES_GET,
 							"Albany-1"));
+					makeRequest(new ResRequest(mId, ResRequest.RES_GET,
+							"Albany-2"));
 				} else if ("Mass-2".equals(newRegion)) {
-					log("request Vassar-1");
+					log("Cleared old pending GETs.");
+					getsPending.clear();
 					makeRequest(new ResRequest(mId, ResRequest.RES_GET,
 							"Vassar-1"));
 				}
-				// PUT logic
-				else if ("Windsor-1".equals(newRegion)) {
-					// PUT all except Windsor-1
-				} else if ("Albany-1".equals(newRegion)) {
-					// PUT all except Albany-1
-				} else if ("Vassar-1".equals(newRegion)) {
-					// PUT all except Vassar-1
+				// extra logic
+				else if ("Main-2".equals(newRegion)
+						|| "Main-3".equals(newRegion)) {
+					log("Cleared old pending GETs.");
+					getsPending.clear();
 				}
 			}
 		}
-		// PRERESERVE logic
+		// PRERESERVE reservation logic
 		else {
 			if (!directionCcw) { // Main-Vassar-Mass
 				if ("Main-1".equals(newRegion)) {
-					// request Windsor-1
-					// request Albany-1
-					// request Vassar-1
+					makeRequest(new ResRequest(mId, ResRequest.RES_GET,
+							"Windsor-1"));
+					makeRequest(new ResRequest(mId, ResRequest.RES_GET,
+							"Albany-1"));
+					makeRequest(new ResRequest(mId, ResRequest.RES_GET,
+							"Albany-2"));
+					makeRequest(new ResRequest(mId, ResRequest.RES_GET,
+							"Vassar-1"));
+					say("Please slow down for 1 minute.");
 				}
 			} else { // Mass-Vassar-Main
 				if ("Mass-1".equals(newRegion)) {
-					// request Windsor-1
-					// request Albany-1
-					// request Vassar-1
+					makeRequest(new ResRequest(mId, ResRequest.RES_GET,
+							"Windsor-1"));
+					makeRequest(new ResRequest(mId, ResRequest.RES_GET,
+							"Albany-1"));
+					makeRequest(new ResRequest(mId, ResRequest.RES_GET,
+							"Albany-2"));
+					makeRequest(new ResRequest(mId, ResRequest.RES_GET,
+							"Vassar-1"));
+					say("Please slow down for 1 minute.");
 				}
 			}
+		}
+
+		// PUT logic
+		// Offer unnecessary reservations once we're on a reserved stretch.
+		if ("Windsor-1".equals(newRegion)) {
+			log("Cleared old pending GETs.");
+			getsPending.clear();
+			// PUT all except Windsor-1
+			offerReservationIfInUse("Vassar-1");
+			// offerReservationIfInUse("Windsor-1");
+			offerReservationIfInUse("Albany-1");
+			offerReservationIfInUse("Albany-2");
+		} else if ("Albany-1".equals(newRegion)) {
+			log("Cleared old pending GETs.");
+			getsPending.clear();
+			// PUT all except Albany-1
+			offerReservationIfInUse("Vassar-1");
+			offerReservationIfInUse("Windsor-1");
+			// offerReservationIfInUse("Albany-1");
+			// offerReservationIfInUse("Albany-2");
+		} else if ("Vassar-1".equals(newRegion)) {
+			log("Cleared old pending GETs.");
+			getsPending.clear();
+			// PUT all except Vassar-1
+			// offerReservationIfInUse("Vassar-1");
+			offerReservationIfInUse("Windsor-1");
+			offerReservationIfInUse("Albany-1");
+			offerReservationIfInUse("Albany-2");
 		}
 	}
 
