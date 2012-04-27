@@ -213,28 +213,24 @@ public class MainActivity extends Activity implements OnInitListener {
 		case 0:
 			// DEP: Go to endExperimentR for setup
 			experimentNumber++;
-			
+
 			// Wait until 10:20am to start first experiment
 			if (firstSet) {
 				long timeUntilFirstExperiment = Globals.FRIDAY_10_20_AM
 						- System.currentTimeMillis();
 				log(String.format("%d - %d = %d msecs until 10:20AM",
-						Globals.FRIDAY_10_20_AM,
-						System.currentTimeMillis(),
+						Globals.FRIDAY_10_20_AM, System.currentTimeMillis(),
 						timeUntilFirstExperiment));
-				myHandler.postDelayed(resetServerR,
-						timeUntilFirstExperiment);
+				myHandler.postDelayed(resetServerR, timeUntilFirstExperiment);
 				say(String.format("Synchornizing in %5d minutes.",
 						(int) (timeUntilFirstExperiment / 1000 / 60)));
 			} else { // wait until 11:35 am to start second set
 				long timeUntilSecondExperiment = Globals.FRIDAY_11_35_AM
 						- System.currentTimeMillis();
 				log(String.format("%d - %d = %d msecs until 11:35AM",
-						Globals.FRIDAY_11_35_AM,
-						System.currentTimeMillis(),
+						Globals.FRIDAY_11_35_AM, System.currentTimeMillis(),
 						timeUntilSecondExperiment));
-				myHandler.postDelayed(resetServerR,
-						timeUntilSecondExperiment);
+				myHandler.postDelayed(resetServerR, timeUntilSecondExperiment);
 				say(String.format("Synchornizing in %5d minutes.",
 						(int) (timeUntilSecondExperiment / 1000 / 60)));
 			}
@@ -475,9 +471,18 @@ public class MainActivity extends Activity implements OnInitListener {
 				CheckBox firstSetCheckbox = (CheckBox) findViewById(R.id.firstset_checkbox);
 				firstSet = firstSetCheckbox.isChecked();
 				if (firstSet) {
-					Globals.EXPT_LENGTH = 10 * 60 * 1000; // 10 min trials
+					if (Globals.DEBUG) {
+						Globals.EXPT_LENGTH = 1 * 60 * 1000;
+					} else {
+						Globals.EXPT_LENGTH = 10 * 60 * 1000; // 10 min
+					}
 				} else {
-					Globals.EXPT_LENGTH = 5 * 60 * 1000; // 5 min trials
+					if (Globals.DEBUG) {
+						Globals.EXPT_LENGTH = 1 * 60 * 1000;
+					} else {
+						Globals.EXPT_LENGTH = 5 * 60 * 1000; // 5 min
+					}
+
 				}
 				log(String.format("Globals.EXPT_LENGTH = %d",
 						Globals.EXPT_LENGTH));
