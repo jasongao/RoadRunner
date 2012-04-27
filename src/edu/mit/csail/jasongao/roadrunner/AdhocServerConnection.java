@@ -116,23 +116,23 @@ public class AdhocServerConnection implements Runnable {
 
 						rrs.myHandler.post(rrs.updateLastDataActivity);
 
-					} catch (IOException e) {
+					} catch (Exception e) {
 						log("Unexpected I/O error or natural shutdown: "
 								+ e.toString());
 					} finally {
 						try {
 							cloudSocket.shutdownOutput();
-						} catch (IOException e) {
+						} catch (Exception e) {
 						}
 
 						try {
 							cloudSocket.shutdownInput();
-						} catch (IOException e) {
+						} catch (Exception e) {
 						}
 
 						try {
 							cloudSocket.close();
-						} catch (IOException e) {
+						} catch (Exception e) {
 						}
 					}
 				}
@@ -144,12 +144,12 @@ public class AdhocServerConnection implements Runnable {
 					clientWriter.flush();
 				}
 			}
-		} catch (IOException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
 			try {
 				mSocket.close();
-			} catch (IOException e) {
+			} catch (Exception e) {
 			}
 		}
 	}

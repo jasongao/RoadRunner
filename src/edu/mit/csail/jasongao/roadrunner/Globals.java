@@ -35,9 +35,9 @@ public class Globals {
 	static long EXPT_LENGTH = 1 * 60 * 1000; // TODO now set in MainActivity
 
 	/** Times */
-	static final boolean DEBUG = false;
-	static final long FRIDAY_10_20_AM = 1335540000L * 1000L - 3600*1000;
-	//static final long FRIDAY_10_20_AM = 1335530962L * 1000L - 3600 * 1000 + 30000;
+	static final boolean DEBUG = true;
+	//static final long FRIDAY_10_20_AM = 1335540000L * 1000L - 3600*1000;
+	static final long FRIDAY_10_20_AM = 1335532412L * 1000L - 3600 * 1000 + 30000; // DEBUG
 	static final long FRIDAY_11_35_AM = 1335544500L * 1000L - 3600 * 1000; // DST
 	
 

@@ -359,22 +359,22 @@ public class RoadRunnerService extends Service implements LocationListener {
 					break;
 				}
 
-			} catch (IOException e) {
-				log("Unexpected I/O error: " + e.toString());
+			} catch (Exception e) {
+				log("Unexpected exception: " + e.toString());
 			} finally {
 				try {
 					s.shutdownOutput();
-				} catch (IOException e) {
+				} catch (Exception e) {
 				}
 
 				try {
 					s.shutdownInput();
-				} catch (IOException e) {
+				} catch (Exception e) {
 				}
 
 				try {
 					s.close();
-				} catch (IOException e) {
+				} catch (Exception e) {
 				}
 			}
 
@@ -695,12 +695,14 @@ public class RoadRunnerService extends Service implements LocationListener {
 					out.close();
 					byte[] data = bos.toByteArray();
 					publishProgress((int) i + 1, (int) count);
-					aat.sendData(data);
+					if (aat != null) {
+						aat.sendData(data);
+					}
 					sent++;
 					log_nodisplay(String.format(
 							"sent %d byte adhoc packet type %d", data.length,
 							adhocPacket.type));
-				} catch (IOException e) {
+				} catch (Exception e) {
 					log("error sending adhoc announcement:" + e.getMessage());
 				}
 			}

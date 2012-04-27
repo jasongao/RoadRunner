@@ -132,37 +132,37 @@ public class MainActivity extends Activity implements OnInitListener {
 
 			switch (experimentNumber) {
 			case 0:
-				say("Continue driving along the default route.");
+				// say("Continue driving along the default route.");
 				experimentNumber++;
 				myHandler.postDelayed(resetServerR, Globals.RESET_SERVER_DELAY);
 				break;
 			case 1:
-				say("Continue driving along the default route.");
+				// say("Continue driving along the default route.");
 				experimentNumber++;
 				myHandler.postDelayed(resetServerR, Globals.RESET_SERVER_DELAY);
 				break;
 			case 2:
-				say("Continue driving along the default route.");
+				// say("Continue driving along the default route.");
 				experimentNumber++;
 				myHandler.postDelayed(resetServerR, Globals.RESET_SERVER_DELAY);
 				break;
 			case 3:
-				say("Continue driving along the default route.");
+				// say("Continue driving along the default route.");
 				experimentNumber++;
 				myHandler.postDelayed(resetServerR, Globals.RESET_SERVER_DELAY);
 				break;
 			case 4:
-				say("Continue driving along the default route.");
+				// say("Continue driving along the default route.");
 				experimentNumber++;
 				myHandler.postDelayed(resetServerR, Globals.RESET_SERVER_DELAY);
 				break;
 			case 5:
-				say("Continue driving along the default route.");
+				// say("Continue driving along the default route.");
 				experimentNumber++;
 				myHandler.postDelayed(resetServerR, Globals.RESET_SERVER_DELAY);
 				break;
 			case 6:
-				say("Continue driving along the default route.");
+				// say("Continue driving along the default route.");
 				experimentNumber++;
 				myHandler.postDelayed(resetServerR, Globals.RESET_SERVER_DELAY);
 				break;
@@ -171,14 +171,16 @@ public class MainActivity extends Activity implements OnInitListener {
 				experimentNumber++;
 				myHandler.postDelayed(resetServerR, Globals.RESET_SERVER_DELAY);
 				break;
-			default:
+			case 8:
 				if (firstSet) {
 					log("##### BANANA TIME");
 					logWriter.flush();
 					say("Banana time. Banana time. Please follow the instructions on the flyer for banana time.");
 				} else {
-					say("Experiments complete. Please return or park your vehicle and bring me back to the Stata Center.");
+					say("Experiments complete. Please return or park your vehicle and bring this phone back to the Stata Center.");
 				}
+				break;
+			default:
 				break;
 			}
 		}
@@ -222,7 +224,7 @@ public class MainActivity extends Activity implements OnInitListener {
 						Globals.FRIDAY_10_20_AM, System.currentTimeMillis(),
 						timeUntilFirstExperiment));
 				myHandler.postDelayed(resetServerR, timeUntilFirstExperiment);
-				say(String.format("Synchornizing in %5d minutes.",
+				say(String.format("Synchronizing in %5d minutes.",
 						(int) (timeUntilFirstExperiment / 1000 / 60)));
 			} else { // wait until 11:35 am to start second set
 				long timeUntilSecondExperiment = Globals.FRIDAY_11_35_AM
@@ -231,9 +233,10 @@ public class MainActivity extends Activity implements OnInitListener {
 						Globals.FRIDAY_11_35_AM, System.currentTimeMillis(),
 						timeUntilSecondExperiment));
 				myHandler.postDelayed(resetServerR, timeUntilSecondExperiment);
-				say(String.format("Synchornizing in %5d minutes.",
+				say(String.format("Synchronizing in %5d minutes.",
 						(int) (timeUntilSecondExperiment / 1000 / 60)));
 			}
+			break;
 		case 1:
 			// Adhoc OFF, 4G Cloud-only, Trial 1
 			// say("WiFi off. Cloud only. Trial 1.");
@@ -321,13 +324,13 @@ public class MainActivity extends Activity implements OnInitListener {
 			((CheckBox) findViewById(R.id.adhoc_checkbox)).setChecked(true);
 			((CheckBox) findViewById(R.id.ondemand_checkbox)).setChecked(true);
 			doBindService();
-			say("Please go to Vassar Street and loop back and forth, making U turns as necessary.");
+			say("Drive back and forth on Vassar Street, making U turns as necessary.");
 
 			// End the experiment after a while
 			myHandler.postDelayed(endExperimentR, Globals.EXPT_LENGTH);
 			break;
 		default:
-			say("No experiments left to do. Please return to the starting point.");
+			// say("No experiments left to do. Please return to the starting point.");
 			break;
 		}
 	}
