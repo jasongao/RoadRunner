@@ -218,10 +218,10 @@ public class MainActivity extends Activity implements OnInitListener {
 
 			// Wait until 10:20am to start first experiment
 			if (firstSet) {
-				long timeUntilFirstExperiment = Globals.FRIDAY_10_20_AM
+				long timeUntilFirstExperiment = Globals.FRIDAY_10_15_AM
 						- System.currentTimeMillis();
 				log(String.format("%d - %d = %d msecs until 10:20AM",
-						Globals.FRIDAY_10_20_AM, System.currentTimeMillis(),
+						Globals.FRIDAY_10_15_AM, System.currentTimeMillis(),
 						timeUntilFirstExperiment));
 				myHandler.postDelayed(resetServerR, timeUntilFirstExperiment);
 				say(String.format("Synchronizing in %5d minutes.",
@@ -328,6 +328,15 @@ public class MainActivity extends Activity implements OnInitListener {
 
 			// End the experiment after a while
 			myHandler.postDelayed(endExperimentR, Globals.EXPT_LENGTH);
+			break;
+		case 8:
+			if (firstSet) {
+				log("##### BANANA TIME");
+				logWriter.flush();
+				say("Banana time. Banana time. Please follow the instructions on the flyer for banana time.");
+			} else {
+				say("Experiments complete. Please return or park your vehicle and bring this phone back to the Stata Center.");
+			}
 			break;
 		default:
 			// say("No experiments left to do. Please return to the starting point.");

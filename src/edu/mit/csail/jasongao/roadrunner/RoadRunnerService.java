@@ -212,7 +212,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 		if (v1.distanceTo(v2) < 20) {
 			log_nodisplay(String.format(
 					"Link viable: %.1f meters apart. (<20m)", distance));
-			return false;
+			return true;
 		}
 
 		// Both stationary?
@@ -274,8 +274,10 @@ public class RoadRunnerService extends Service implements LocationListener {
 			return true;
 		}
 
+		// log_nodisplay(String.format(
+		// "Link viable: %.1f meters apart. (moving apart)", distance));
 		log_nodisplay(String.format(
-				"Link viable: %.1f meters apart. (moving apart)", distance));
+				"Link not viable: %.1f meters apart. (moving apart)", distance));
 		return false;
 	}
 
@@ -1218,22 +1220,28 @@ public class RoadRunnerService extends Service implements LocationListener {
 		/** Navigation speech logic */
 		if (!directionCcw) { // CW Main-Vassar-Mass
 			if ("Main-1".equals(newRegion) && canDriveOn("Windsor-1")) {
+				log("Divert onto Windsor-1.");
 				say("Turn right onto Windsor, then continue to Mass Avenue.");
 			}
 			if ("Main-2".equals(newRegion) && canDriveOn("Albany-2")) {
+				log("Divert onto Albany-2.");
 				say("Turn right onto Albany, then continue to Mass Avenue.");
 			}
 			if ("Main-4".equals(newRegion)) {
+				log("Default onto Vassar-1.");
 				say("Turn right onto Vassar, then continue to Mass Avenue.");
 			}
 		} else { // CCW Mass-Vassar-Main
 			if ("Mass-1".equals(newRegion) && canDriveOn("Windsor-1")) {
+				log("Divert onto Windsor-1.");
 				say("Turn left onto Windsor, then continue to Main Street.");
 			}
 			if ("Mass-2".equals(newRegion) && canDriveOn("Albany-1")) {
+				log("Divert onto Albany-1.");
 				say("Turn left onto Albany, then continue to Main Street.");
 			}
 			if ("Mass-3".equals(newRegion)) {
+				log("Default onto Vassar-1.");
 				say("Turn left onto Vassar, then continue to Main Street.");
 			}
 		}
@@ -1301,6 +1309,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 		else {
 			if (!directionCcw) { // Main-Vassar-Mass
 				if ("Main-1".equals(newRegion)) {
+					log("PRERESERVE: Making reservations while in Main-1.");
 					makeRequest(new ResRequest(mId, ResRequest.RES_GET,
 							"Windsor-1"));
 					makeRequest(new ResRequest(mId, ResRequest.RES_GET,
@@ -1313,6 +1322,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 				}
 			} else { // Mass-Vassar-Main
 				if ("Mass-1".equals(newRegion)) {
+					log("PRERESERVE: Making reservations while in Mass-1.");
 					makeRequest(new ResRequest(mId, ResRequest.RES_GET,
 							"Windsor-1"));
 					makeRequest(new ResRequest(mId, ResRequest.RES_GET,
@@ -1332,7 +1342,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 		if ("Windsor-1".equals(newRegion)) {
 			log("Cleared old pending GETs.");
 			getsPending.clear();
-			// PUT all except Windsor-1
+			log("PUT all except Windsor-1");
 			offerReservationIfInUse("Vassar-1");
 			// offerReservationIfInUse("Windsor-1");
 			offerReservationIfInUse("Albany-1");
@@ -1340,7 +1350,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 		} else if ("Albany-1".equals(newRegion)) {
 			log("Cleared old pending GETs.");
 			getsPending.clear();
-			// PUT all except Albany-1
+			log("PUT all except Albany-1");
 			offerReservationIfInUse("Vassar-1");
 			offerReservationIfInUse("Windsor-1");
 			// offerReservationIfInUse("Albany-1");
@@ -1348,7 +1358,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 		} else if ("Vassar-1".equals(newRegion)) {
 			log("Cleared old pending GETs.");
 			getsPending.clear();
-			// PUT all except Vassar-1
+			log("PUT all except Vassar-1");
 			// offerReservationIfInUse("Vassar-1");
 			offerReservationIfInUse("Windsor-1");
 			offerReservationIfInUse("Albany-1");
