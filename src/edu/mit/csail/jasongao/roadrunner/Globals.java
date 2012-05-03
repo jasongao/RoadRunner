@@ -36,11 +36,15 @@ public class Globals {
 
 	/** Times */
 	/* DEBUG */
-	//static final boolean DEBUG = true;
-	//static final long FRIDAY_10_15_AM = 1335532412L * 1000L - 3600 * 1000 + 30000;
-	
-	static final boolean DEBUG = false;
-	static final long FRIDAY_10_15_AM = 1335539700L * 1000L - 3600*1000;
-	
-	static final long FRIDAY_11_35_AM = 1335544500L * 1000L - 3600 * 1000; // DST
+	static final boolean DEBUG = true;
+	static final long START_TIME_1 = 1336085662L * 1000L + 30000;
+
+	// static final boolean DEBUG = false;
+	// static final long START_TIME_1 = 1336158480L * 1000L - 3600 * 1000;
+
+	static final long START_TIME_2 = 1335544500L * 1000L; // GMT-4
+
+	/** Navigation */
+	static final boolean NAV_SPEECH = false;
+	static final boolean NAV_REQUESTS = false;
 }

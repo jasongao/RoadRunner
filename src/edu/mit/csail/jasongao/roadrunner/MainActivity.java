@@ -125,7 +125,93 @@ public class MainActivity extends Activity implements OnInitListener {
 	private boolean firstSet = false;
 	private int experimentNumber = 0;
 
+	private void startExperimentNum() {
+		log(String.format("------ STARTING EXPERIMENT %d ------",
+				experimentNumber));
+		say(String.format("Starting experiment %d.", experimentNumber));
+
+		switch (experimentNumber) {
+		case 0:
+			experimentNumber++;
+
+			// Wait until 2:08pm to start first experiment
+			long timeUntilFirstExperiment = Globals.START_TIME_1
+					- System.currentTimeMillis();
+			log(String.format("%d - %d = %d msecs until 2:08PM",
+					Globals.START_TIME_1, System.currentTimeMillis(),
+					timeUntilFirstExperiment));
+			myHandler.postDelayed(resetServerR, timeUntilFirstExperiment);
+			say(String.format("Synchronizing in %5d minutes.",
+					(int) (timeUntilFirstExperiment / 1000 / 60)));
+			break;
+		case 1:
+			// Adhoc ON, SUPERDENSE Tokens, Trial 1
+			// say("WiFi on. Super dense tokens. Trial 1.");
+			Globals.REQUEST_DIRECT_PUT_DEADLINE_FROM_NOW = 10 * 60 * 1000;
+			Globals.REQUEST_DIRECT_PUT_DEADLINE_FROM_NOW = 10 * 60 * 1000;
+			((CheckBox) findViewById(R.id.adhoc_checkbox)).setChecked(true);
+			((CheckBox) findViewById(R.id.ondemand_checkbox)).setChecked(true);
+			doBindService();
+			say("Continue looping on Vassar Street.");
+
+			// End the experiment after a while
+			myHandler.postDelayed(endExperimentR, Globals.EXPT_LENGTH);
+			break;
+		case 2:
+			// Adhoc ON, SUPERDENSE Tokens, Trial 2
+			// say("WiFi on. Super dense tokens. Trial 2.");
+			Globals.REQUEST_DIRECT_PUT_DEADLINE_FROM_NOW = 10 * 60 * 1000;
+			Globals.REQUEST_DIRECT_PUT_DEADLINE_FROM_NOW = 10 * 60 * 1000;
+			((CheckBox) findViewById(R.id.adhoc_checkbox)).setChecked(true);
+			((CheckBox) findViewById(R.id.ondemand_checkbox)).setChecked(true);
+			doBindService();
+			say("Continue looping on Vassar Street.");
+
+			// End the experiment after a while
+			myHandler.postDelayed(endExperimentR, Globals.EXPT_LENGTH);
+			break;
+		default:
+			say("Experiments complete. Please return or park your vehicle and bring this phone back to the Stata Center, Gates tower, 7th floor.");
+			break;
+		}
+	}
+
 	private Runnable endExperimentR = new Runnable() {
+		public void run() {
+			log(String.format("##### endExperimentR %d", experimentNumber));
+			logWriter.flush();
+			switch (experimentNumber) {
+			case 0:
+				experimentNumber++;
+				myHandler.postDelayed(resetServerR, Globals.RESET_SERVER_DELAY);
+				break;
+			case 1:
+				experimentNumber++;
+				myHandler.postDelayed(resetServerR, Globals.RESET_SERVER_DELAY);
+				break;
+			case 2:
+				say("Experiments complete. Please return or park your vehicle and bring this phone back to the Stata Center, Gates tower, 7th floor.");
+				break;
+			default:
+				break;
+			}
+		}
+	};
+
+	/** Reset the server in the interlude between experiments. */
+	private Runnable resetServerR = new Runnable() {
+		public void run() {
+			log("------ SERVER RESET ------");
+			if (mService != null) {
+				mService.resetCloud();
+			}
+			doUnbindService();
+
+			myHandler.postDelayed(startExperimentR, Globals.EXPT_START_DELAY);
+		}
+	};
+
+	private Runnable endExperimentR_old = new Runnable() {
 		public void run() {
 			log(String.format("##### endExperimentR %d", experimentNumber));
 			logWriter.flush();
@@ -187,7 +273,7 @@ public class MainActivity extends Activity implements OnInitListener {
 	};
 
 	/** Reset the server in the interlude between experiments. */
-	private Runnable resetServerR = new Runnable() {
+	private Runnable resetServerR_old = new Runnable() {
 		public void run() {
 			log("------ SERVER RESET ------");
 			if (mService != null) {
@@ -206,7 +292,7 @@ public class MainActivity extends Activity implements OnInitListener {
 		}
 	};
 
-	private void startExperimentNum() {
+	private void startExperimentNum_old() {
 		log(String.format("------ STARTING EXPERIMENT %d ------",
 				experimentNumber));
 		say(String.format("Starting experiment %d.", experimentNumber));
@@ -218,19 +304,19 @@ public class MainActivity extends Activity implements OnInitListener {
 
 			// Wait until 10:20am to start first experiment
 			if (firstSet) {
-				long timeUntilFirstExperiment = Globals.FRIDAY_10_15_AM
+				long timeUntilFirstExperiment = Globals.START_TIME_1
 						- System.currentTimeMillis();
 				log(String.format("%d - %d = %d msecs until 10:20AM",
-						Globals.FRIDAY_10_15_AM, System.currentTimeMillis(),
+						Globals.START_TIME_1, System.currentTimeMillis(),
 						timeUntilFirstExperiment));
 				myHandler.postDelayed(resetServerR, timeUntilFirstExperiment);
 				say(String.format("Synchronizing in %5d minutes.",
 						(int) (timeUntilFirstExperiment / 1000 / 60)));
 			} else { // wait until 11:35 am to start second set
-				long timeUntilSecondExperiment = Globals.FRIDAY_11_35_AM
+				long timeUntilSecondExperiment = Globals.START_TIME_2
 						- System.currentTimeMillis();
 				log(String.format("%d - %d = %d msecs until 11:35AM",
-						Globals.FRIDAY_11_35_AM, System.currentTimeMillis(),
+						Globals.START_TIME_2, System.currentTimeMillis(),
 						timeUntilSecondExperiment));
 				myHandler.postDelayed(resetServerR, timeUntilSecondExperiment);
 				say(String.format("Synchronizing in %5d minutes.",
@@ -482,20 +568,17 @@ public class MainActivity extends Activity implements OnInitListener {
 				myHandler.removeCallbacks(resetServerR);
 				CheckBox firstSetCheckbox = (CheckBox) findViewById(R.id.firstset_checkbox);
 				firstSet = firstSetCheckbox.isChecked();
-				if (firstSet) {
-					if (Globals.DEBUG) {
-						Globals.EXPT_LENGTH = 1 * 60 * 1000;
-					} else {
-						Globals.EXPT_LENGTH = 10 * 60 * 1000; // 10 min
-					}
-				} else {
-					if (Globals.DEBUG) {
-						Globals.EXPT_LENGTH = 1 * 60 * 1000;
-					} else {
-						Globals.EXPT_LENGTH = 5 * 60 * 1000; // 5 min
-					}
 
+				if (firstSet) {
+					Globals.EXPT_LENGTH = 10 * 60 * 1000; // 10 min
+				} else {
+					Globals.EXPT_LENGTH = 5 * 60 * 1000; // 5 min
 				}
+
+				if (Globals.DEBUG) {
+					Globals.EXPT_LENGTH = 1 * 60 * 1000;
+				}
+
 				log(String.format("Globals.EXPT_LENGTH = %d",
 						Globals.EXPT_LENGTH));
 
