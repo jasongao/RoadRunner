@@ -16,6 +16,7 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
+import android.os.PowerManager;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.OnInitListener;
 import android.util.Log;
@@ -43,8 +44,9 @@ public class MainActivity extends Activity implements OnInitListener {
 	RoadRunnerService mService;
 	boolean mBound = false;
 
-	// TTS
+	// Android stuff
 	TextToSpeech mTts;
+	PowerManager.WakeLock wl = null;
 
 	// GPS clock sync
 	public static boolean clockSynced = false;
@@ -468,6 +470,13 @@ public class MainActivity extends Activity implements OnInitListener {
 			// One of many other states, but we can neither read nor write
 		}
 
+		// Get a wakelock to keep everything running
+		PowerManager pm = (PowerManager) getApplicationContext()
+				.getSystemService(Context.POWER_SERVICE);
+		wl = pm.newWakeLock(PowerManager.FULL_WAKE_LOCK
+				| PowerManager.ON_AFTER_RELEASE, TAG);
+		wl.acquire();
+
 		mTts = new TextToSpeech(this, this);
 		mTts.setLanguage(Locale.US);
 		// mTts.setLanguage(Locale.ENGLISH);
@@ -481,6 +490,10 @@ public class MainActivity extends Activity implements OnInitListener {
 	@Override
 	public void onDestroy() {
 		doUnbindService();
+
+		if (wl != null) {
+			wl.release();
+		}
 
 		if (logWriter != null) {
 			logWriter.flush();
@@ -568,12 +581,10 @@ public class MainActivity extends Activity implements OnInitListener {
 				myHandler.removeCallbacks(resetServerR);
 				CheckBox firstSetCheckbox = (CheckBox) findViewById(R.id.firstset_checkbox);
 				firstSet = firstSetCheckbox.isChecked();
-
-				if (firstSet) {
-					Globals.EXPT_LENGTH = 10 * 60 * 1000; // 10 min
-				} else {
-					Globals.EXPT_LENGTH = 5 * 60 * 1000; // 5 min
-				}
+				/*
+				 * if (firstSet) { Globals.EXPT_LENGTH = 10 * 60 * 1000; // 10
+				 * min } else { Globals.EXPT_LENGTH = 5 * 60 * 1000; // 5 min }
+				 */
 
 				if (Globals.DEBUG) {
 					Globals.EXPT_LENGTH = 1 * 60 * 1000;

@@ -2,7 +2,6 @@ package edu.mit.csail.jasongao.roadrunner;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.ObjectOutput;
@@ -754,8 +753,13 @@ public class RoadRunnerService extends Service implements LocationListener {
 	public void onDestroy() {
 		log("Service destroyed");
 
-		wl.release();
-		lm.removeUpdates(this);
+		if (wl != null) {
+			wl.release();
+		}
+
+		if (lm != null) {
+			lm.removeUpdates(this);
+		}
 
 		stop();
 	}
@@ -871,10 +875,10 @@ public class RoadRunnerService extends Service implements LocationListener {
 
 		// Region 1
 		r = new Region("Stata-1");
-		r.addVertex(42.36203618110813, -71.09179439217377);
-		r.addVertex(42.362511832791746, -71.09074296623993);
-		r.addVertex(42.36231364502786, -71.08980955750275);
-		r.addVertex(42.361592236287954, -71.09141888291168);
+		r.addVertex(42.36199654330529, -71.09211625725555);
+		r.addVertex(42.362892351545966, -71.09046401650238);
+		r.addVertex(42.362234369747256, -71.08898343712616);
+		r.addVertex(42.36113243298882, -71.09136523873138);
 		rs.add(r);
 
 		log("Testing regions and getRegion logic...");
@@ -1273,6 +1277,23 @@ public class RoadRunnerService extends Service implements LocationListener {
 		}
 
 		/** Request making logic */
+		if (Globals.SUPER_DENSE_REQUESTS) {
+			if ("FREE".equals(newRegion)) {
+				log("Cleared old pending GETs in FREE.");
+				getsPending.clear();
+				// Add request to pending queue
+				ResRequest r1 = new ResRequest(mId, ResRequest.RES_GET,
+						"Stata-1");
+				log(String.format("Adding new pending request for %s.",
+						r1.regionId));
+				// send directly to cloud
+				new ResRequestTask().execute(r1, Globals.CLOUD_HOST);
+			} else if ("Stata-1".equals(newRegion)) {
+				log("Cleared old pending GETs in Stata-1.");
+				getsPending.clear();
+			}
+		}
+
 		// ON-DEMAND ADHOC and CLOUD-ONLY reservation logic
 		if (Globals.NAV_REQUESTS) {
 			if (!this.adhocEnabled || (this.adhocEnabled && this.onDemand)) {

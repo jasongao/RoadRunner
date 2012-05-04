@@ -23,8 +23,8 @@ public class Globals {
 	static int REQUEST_PENALTY_VALID_PERIOD = 600000; // 10 min
 	static int REQUEST_PENALTY_CHECK_PERIOD = 60000; // 1 min
 	static int REQUEST_DEADLINE_CHECK_PERIOD = 500;
-	static int REQUEST_DIRECT_PUT_DEADLINE_FROM_NOW = 60000; // TODO
-	static int REQUEST_DIRECT_GET_DEADLINE_FROM_NOW = 10000; // TODO
+	static int REQUEST_DIRECT_PUT_DEADLINE_FROM_NOW =  10 * 60 * 1000; // TODO
+	static int REQUEST_DIRECT_GET_DEADLINE_FROM_NOW =  10 * 60 * 1000; // TODO
 	static int REQUEST_RELAY_GET_DEADLINE_FROM_NOW = 3000; // deprecated
 
 	static final int LAST_DATA_ACTIVITY_THRESHOLD = 8000;
@@ -32,19 +32,20 @@ public class Globals {
 	/** Automated experiment progression */
 	static long EXPT_START_DELAY = 1 * 15 * 1000;
 	static long RESET_SERVER_DELAY = 1 * 15 * 1000;
-	static long EXPT_LENGTH = 1 * 60 * 1000; // TODO now set in MainActivity
+	static long EXPT_LENGTH = 10 * 60 * 1000; // TODO now set in MainActivity
 
 	/** Times */
 	/* DEBUG */
-	static final boolean DEBUG = true;
-	static final long START_TIME_1 = 1336085662L * 1000L + 30000;
+	//static final boolean DEBUG = true;
+	//static final long START_TIME_1 = 1336085662L * 1000L + 30000;
 
-	// static final boolean DEBUG = false;
-	// static final long START_TIME_1 = 1336158480L * 1000L - 3600 * 1000;
+	static final boolean DEBUG = false;
+	static final long START_TIME_1 = 1336158480L * 1000L - 3600 * 1000; // GMT-4
 
 	static final long START_TIME_2 = 1335544500L * 1000L; // GMT-4
 
 	/** Navigation */
 	static final boolean NAV_SPEECH = false;
 	static final boolean NAV_REQUESTS = false;
+	static final boolean SUPER_DENSE_REQUESTS = true;
 }
