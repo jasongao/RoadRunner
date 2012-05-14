@@ -61,7 +61,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 	/***********************************************
 	 * RoadRunner state
 	 ***********************************************/
-	
+
 	/** TODO Nonces for idempotent UDP tokens */
 	private int nonce = 0;
 	private HashMap<Long, HashSet<Long>> noncesHeard;
@@ -166,17 +166,31 @@ public class RoadRunnerService extends Service implements LocationListener {
 						p.issued = req.issued;
 						p.expires = req.expires;
 
-						// Send over UDP a few times
+						// Idempotently send over UDP a few times
 						log(String
 								.format("Responding to GET request from %d with an offered reservation. Over UDP.",
 										other.src));
-						// TODO idempotently send multiple times
-						// new SendPacketsTask().execute(p, p, p);
-						new SendPacketsTask().execute(p);
+						p.nonce = nonce++;
+						new SendPacketsTask().execute(p, p, p);
 					}
 
 				} else if (other.type == AdhocPacket.TOKEN_SEND) {
-					// Someone sent a token to us
+
+					// Check if already received this packet copy
+					if (!noncesHeard.containsKey(other.src)) {
+						noncesHeard.put(other.src, new HashSet<Long>());
+					}
+
+					if (noncesHeard.get(other.src).contains(other.nonce)) {
+						// Already heard this packet, so ignore
+						log("Nonce seen before, ignoring duplicate token sent.");
+						break;
+					} else {
+						log("Nonce NOT seen before, receiving token sent.");
+						noncesHeard.get(other.src).add(other.nonce);
+					}
+
+					// Other car sent a token to us
 					ResRequest req = queuePoll(getsPending, other.region);
 					if (req != null) {
 						// It was a pending GET, so add to our in-use store
@@ -880,6 +894,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 		this.getsPending = new ConcurrentLinkedQueue<ResRequest>();
 		this.offers = new ConcurrentLinkedQueue<ResRequest>();
 		this.penalties = new ConcurrentLinkedQueue<ResRequest>();
+		this.noncesHeard = new HashMap<Long, HashSet<Long>>();
 
 		// Start recurring runnables
 		myHandler.postDelayed(cloudDirectGetRequestCheck,

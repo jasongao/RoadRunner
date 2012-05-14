@@ -6,17 +6,17 @@ public class Globals {
 	static final int ADHOC_ANNOUNCE_PORT = 4200;
 	static final long ADHOC_ANNOUNCE_PERIOD = 2000 * 1;
 	static boolean RELAY_ENABLED = false;
-	
+
 	/** Adhoc UDP + TCP token transfers */
-	//static final boolean ADHOC_UDP_ONLY = false;
-	static final boolean ADHOC_UDP_ONLY = true;
-	static final String ADHOC_IFACE_NAME = "eth0";
-	final static public String ADHOC_BROADCAST_ADDRESS = "192.168.42.255";
-	
-	/** DSRC / Adhoc UDP-only switch */
+	// static final boolean ADHOC_UDP_ONLY = false;
 	// static final boolean ADHOC_UDP_ONLY = true;
-	//static final String ADHOC_IFACE_NAME = "rndis0"; // tethered DSRC radio
-	//final static public String ADHOC_BROADCAST_ADDRESS = "192.168.42.130";
+	// static final String ADHOC_IFACE_NAME = "eth0";
+	// final static public String ADHOC_BROADCAST_ADDRESS = "192.168.42.255";
+
+	/** DSRC / Adhoc UDP-only switch */
+	static final boolean ADHOC_UDP_ONLY = true;
+	static final String ADHOC_IFACE_NAME = "rndis0"; // tethered DSRC radio
+	final static public String ADHOC_BROADCAST_ADDRESS = "192.168.42.130";
 
 	/** Cloud parameters */
 	static final String CLOUD_HOST = "128.30.87.195";
@@ -29,8 +29,8 @@ public class Globals {
 	static int REQUEST_PENALTY_VALID_PERIOD = 600000; // 10 min
 	static int REQUEST_PENALTY_CHECK_PERIOD = 60000; // 1 min
 	static int REQUEST_DEADLINE_CHECK_PERIOD = 500;
-	static int REQUEST_DIRECT_PUT_DEADLINE_FROM_NOW =  10 * 60 * 1000; // TODO
-	static int REQUEST_DIRECT_GET_DEADLINE_FROM_NOW =  10 * 60 * 1000; // TODO
+	static int REQUEST_DIRECT_PUT_DEADLINE_FROM_NOW = 10 * 60 * 1000; // TODO
+	static int REQUEST_DIRECT_GET_DEADLINE_FROM_NOW = 10 * 60 * 1000; // TODO
 	static int REQUEST_RELAY_GET_DEADLINE_FROM_NOW = 3000; // deprecated
 
 	static final int LAST_DATA_ACTIVITY_THRESHOLD = 8000;
@@ -42,8 +42,8 @@ public class Globals {
 
 	/** Times */
 	/* DEBUG */
-	//static final boolean DEBUG = true;
-	//static final long START_TIME_1 = 1336085662L * 1000L + 30000;
+	// static final boolean DEBUG = true;
+	// static final long START_TIME_1 = 1336085662L * 1000L + 30000;
 
 	static final boolean DEBUG = false;
 	static final long START_TIME_1 = 1336158480L * 1000L - 3600 * 1000; // GMT-4
