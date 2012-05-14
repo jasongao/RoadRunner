@@ -1,16 +1,22 @@
 package edu.mit.csail.jasongao.roadrunner;
 
 public class Globals {
-	/** Adhoc radio */
-	// static final String ADHOC_IFACE_NAME = "rndis0"; // tethered DSRC radio
-	// final static public String ADHOC_BROADCAST_ADDRESS = "192.168.42.130";
-	static final String ADHOC_IFACE_NAME = "eth0";
-	final static public String ADHOC_BROADCAST_ADDRESS = "192.168.42.255";
+	/** Adhoc parameters */
 	static final int ADHOC_MAX_PACKET_SIZE = 32768; // bytes
 	static final int ADHOC_ANNOUNCE_PORT = 4200;
 	static final long ADHOC_ANNOUNCE_PERIOD = 2000 * 1;
-
 	static boolean RELAY_ENABLED = false;
+	
+	/** Adhoc UDP + TCP token transfers */
+	//static final boolean ADHOC_UDP_ONLY = false;
+	static final boolean ADHOC_UDP_ONLY = true;
+	static final String ADHOC_IFACE_NAME = "eth0";
+	final static public String ADHOC_BROADCAST_ADDRESS = "192.168.42.255";
+	
+	/** DSRC / Adhoc UDP-only switch */
+	// static final boolean ADHOC_UDP_ONLY = true;
+	//static final String ADHOC_IFACE_NAME = "rndis0"; // tethered DSRC radio
+	//final static public String ADHOC_BROADCAST_ADDRESS = "192.168.42.130";
 
 	/** Cloud parameters */
 	static final String CLOUD_HOST = "128.30.87.195";

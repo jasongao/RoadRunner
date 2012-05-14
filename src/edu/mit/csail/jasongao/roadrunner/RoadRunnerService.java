@@ -12,6 +12,7 @@ import java.io.Writer;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -60,6 +61,10 @@ public class RoadRunnerService extends Service implements LocationListener {
 	/***********************************************
 	 * RoadRunner state
 	 ***********************************************/
+	
+	/** TODO Nonces for idempotent UDP tokens */
+	private int nonce = 0;
+	private HashMap<Long, HashSet<Long>> noncesHeard;
 
 	private boolean adhocEnabled = false;
 	private boolean onDemand = false;
@@ -92,6 +97,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 	 * Queue helpers
 	 ***********************************************/
 
+	/** Returns a Set containing all Region keys in a queue. */
 	public static Set<String> queueKeySet(Queue<ResRequest> q) {
 		Set<String> keys = new HashSet<String>();
 
@@ -103,6 +109,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 		return keys;
 	}
 
+	/** Removes a ResRequest from the Queue and returns it. Null if not found. */
 	public static ResRequest queuePoll(Queue<ResRequest> q, String rid) {
 		for (Iterator<ResRequest> it = q.iterator(); it.hasNext();) {
 			ResRequest req = it.next();
@@ -129,6 +136,12 @@ public class RoadRunnerService extends Service implements LocationListener {
 					break;
 				}
 				AdhocPacket other = (AdhocPacket) msg.obj;
+
+				// filter out messages not addressed to us or broadcast
+				if (other.dst != -1 && other.dst != mId) {
+					break;
+				}
+
 				long now = getTime();
 				log_nodisplay(String.format("Received UDP %s", other));
 
@@ -136,12 +149,75 @@ public class RoadRunnerService extends Service implements LocationListener {
 					adhocAnnounce(false);
 				}
 
-				if (!linkIsViable(mLoc, other)) {
+				if (!linkIsViableWiFi(mLoc, other)) {
 					break;
 				}
 
-				if (other.type == AdhocPacket.TRANSFER_TOKEN) {
-					// TODO
+				if (other.type == AdhocPacket.TOKEN_REQUEST) {
+					// Someone wants a token from us; give them it if possible
+					ResRequest req = queuePoll(offers, other.region);
+					if (req != null) {
+						AdhocPacket p = new AdhocPacket(mId, mLoc);
+						p.dst = other.src;
+						p.type = AdhocPacket.TOKEN_SEND;
+						p.tokenString = req.tokenString;
+						p.region = req.regionId;
+						p.signature = req.signature;
+						p.issued = req.issued;
+						p.expires = req.expires;
+
+						// Send over UDP a few times
+						log(String
+								.format("Responding to GET request from %d with an offered reservation. Over UDP.",
+										other.src));
+						// TODO idempotently send multiple times
+						// new SendPacketsTask().execute(p, p, p);
+						new SendPacketsTask().execute(p);
+					}
+
+				} else if (other.type == AdhocPacket.TOKEN_SEND) {
+					// Someone sent a token to us
+					ResRequest req = queuePoll(getsPending, other.region);
+					if (req != null) {
+						// It was a pending GET, so add to our in-use store
+						req.done = true;
+						req.completed = getTime();
+						log(String
+								.format("GET request for %s completed after %d ms Over UDP",
+										req.regionId, req.completed
+												- req.created));
+						/* Use reservation if we don't have it, otherwise extras */
+						if (!reservationsInUse.containsKey(req.regionId)) {
+							reservationsInUse.put(req.regionId, req);
+							log(String.format("Added to reservationsInUse: %s",
+									reservationsInUse));
+						} else {
+							req.hardDeadline = req.completed
+									+ Globals.REQUEST_DIRECT_PUT_DEADLINE_FROM_NOW;
+							offers.add(req);
+							log(String.format("Added to offers: %s",
+									req.regionId));
+						}
+					} else {
+						req = new ResRequest(mId, ResRequest.RES_GET,
+								other.region);
+						req.done = true;
+						req.completed = getTime();
+						req.tokenString = other.tokenString;
+						req.signature = other.signature;
+						String[] parts = other.tokenString.split(" ");
+						req.issued = Long.parseLong(parts[1]);
+						req.expires = Long.parseLong(parts[2]);
+						req.hardDeadline = req.completed
+								+ Globals.REQUEST_DIRECT_PUT_DEADLINE_FROM_NOW;
+						offers.add(req);
+
+						log(String.format(
+								"%s sent unwanted token for %s Over UDP",
+								other.src, req.regionId));
+
+						log(String.format("Added to offers: %s", req.regionId));
+					}
 
 				} else if (other.type == AdhocPacket.ANNOUNCE) {
 					for (Iterator<ResRequest> it = getsPending.iterator(); it
@@ -150,14 +226,31 @@ public class RoadRunnerService extends Service implements LocationListener {
 
 						// try to get token from other vehicle?
 						if (other.tokensOffered.contains(req.regionId)) {
-							log(String
-									.format("Other vehicle %d offers %s, I want %s, GET %s",
-											other.src, other.tokensOffered,
-											queueKeySet(getsPending),
-											req.regionId));
-							it.remove(); // fix ConcurrentModificationException
-							new ResRequestTask().execute(req, "192.168.42."
-									+ other.src);
+							if (Globals.ADHOC_UDP_ONLY) { // UDP pathway
+								// Send a TOKEN_REQUEST
+								AdhocPacket p = new AdhocPacket(mId, mLoc);
+								p.type = AdhocPacket.TOKEN_REQUEST;
+								p.region = req.regionId;
+								log(String
+										.format("Other vehicle %d offers %s, I want %s, GET %s Over UDP",
+												other.src, other.tokensOffered,
+												queueKeySet(getsPending),
+												req.regionId));
+
+								new SendPacketsTask().execute(p);
+							} else { // TCP pathway
+
+								log(String
+										.format("Other vehicle %d offers %s, I want %s, GET %s",
+												other.src, other.tokensOffered,
+												queueKeySet(getsPending),
+												req.regionId));
+
+								it.remove(); // ConcurrentModificationException?
+								new ResRequestTask().execute(req, "192.168.42."
+										+ other.src);
+							}
+
 						}
 
 						// try to relay through other vehicle?
@@ -175,6 +268,8 @@ public class RoadRunnerService extends Service implements LocationListener {
 					}
 				}
 
+				updateDisplay();
+
 				break;
 			}
 		}
@@ -190,7 +285,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 	 *            Location of vehicle 2
 	 * @return true is the link is viable, false if not
 	 */
-	private boolean linkIsViable(Location v1, AdhocPacket other) {
+	private boolean linkIsViableWiFi(Location v1, AdhocPacket other) {
 		Location v2 = other.getLocation();
 
 		if (v1 == null || v2 == null) {
@@ -549,7 +644,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 			return;
 		}
 
-		myHandler.removeCallbacks(adhocAnnounceR);
+		// myHandler.removeCallbacks(adhocAnnounceR);
 
 		AdhocPacket p = new AdhocPacket(mId, mLoc);
 
