@@ -143,13 +143,14 @@ public class RoadRunnerService extends Service implements LocationListener {
 				}
 
 				long now = getTime();
-				log_nodisplay(String.format("Received UDP %s", other));
+				log(String.format("Received UDP %s", other));
 
 				if (other.triggerAnnounce) {
 					adhocAnnounce(false);
 				}
 
-				if (!linkIsViableWiFi(mLoc, other)) {
+				// if (!linkIsViableWiFi(mLoc, other)) {
+				if (!linkIsViableDSRC(mLoc, other)) {
 					break;
 				}
 
@@ -288,6 +289,106 @@ public class RoadRunnerService extends Service implements LocationListener {
 			}
 		}
 	};
+
+	/**
+	 * Determine whether two vehicle's location fixes indicate that a DSRC UDP
+	 * link can be sustained over the next Globals.LINK_LIFETIME_THRESHOLD secs
+	 * 
+	 * @param v1
+	 *            Location of vehicle 1
+	 * @param v2
+	 *            Location of vehicle 2
+	 * @return true is the link is viable, false if not
+	 */
+	private boolean linkIsViableDSRC(Location v1, AdhocPacket other) {
+		Location v2 = other.getLocation();
+
+		if (v1 == null || v2 == null) {
+			log_nodisplay("Link viable debug: no GPS fix.");
+			return true;
+		}
+
+		float distance = v1.distanceTo(v2);
+
+		// Too far away (> 250m)
+		if (distance > 250) {
+			log_nodisplay(String.format(
+					"Link not viable: %.1f meters apart. (>250)", distance));
+			return false;
+		}
+
+		// Quite close together (< 150 m)
+		if (v1.distanceTo(v2) < 150) {
+			log_nodisplay(String.format(
+					"Link viable: %.1f meters apart. (<100m)", distance));
+			return true;
+		}
+
+		// Both stationary?
+		if (v1.hasSpeed() && v1.getSpeed() < 2 && v2.hasSpeed()
+				&& v2.getSpeed() < 2) {
+			log_nodisplay(String.format(
+					"Link viable: %.1f meters apart. (low speed)", distance));
+			return true;
+		}
+
+		// One stationary and other moving towards it?
+		if (v1.hasSpeed()
+				&& v1.getSpeed() < 2
+				&& v2.hasBearing()
+				&& ((Math.abs(v2.bearingTo(v1) - v2.getBearing()) < 45) || (Math
+						.abs(v2.bearingTo(v1) - v2.getBearing()) > 360 - 45))) {
+			log_nodisplay(String.format(
+					"Link viable: %.1f meters apart. (other approaching)",
+					distance));
+			return true;
+		}
+		if (v2.hasSpeed()
+				&& v2.getSpeed() < 2
+				&& v1.hasBearing()
+				&& ((Math.abs(v1.bearingTo(v2) - v1.getBearing()) < 45) || (Math
+						.abs(v1.bearingTo(v2) - v1.getBearing()) > 360 - 45))) {
+			log_nodisplay(String.format(
+					"Link viable: %.1f meters apart. (approaching other)",
+					distance));
+			return true;
+		}
+
+		// Both moving towards each other
+		if (v1.distanceTo(v2) < 200
+				&& v1.hasBearing()
+				&& v2.hasBearing()
+				&& (Math.abs(v1.bearingTo(v2) - v1.getBearing()) < 15 || Math
+						.abs(v1.bearingTo(v2) - v1.getBearing()) > 360 - 15)
+				&& (Math.abs(v2.bearingTo(v1) - v2.getBearing()) < 15 || Math
+						.abs(v2.bearingTo(v1) - v2.getBearing()) > 360 - 15)) {
+			log_nodisplay(String.format(
+					"Link viable: %.1f meters apart. (mutual approach)",
+					distance));
+			return true;
+		}
+
+		// Moving together?
+		if (v1.distanceTo(v2) < 200
+				&& v1.hasBearing()
+				&& v2.hasBearing()
+				&& v1.hasSpeed()
+				&& v2.hasSpeed()
+				&& (Math.abs(v1.getBearing() - v2.getBearing()) < 15 || Math
+						.abs(v1.getBearing() - v2.getBearing()) > 360 - 15)
+				&& Math.abs(v1.getSpeed() - v2.getSpeed()) < 5) {
+			log_nodisplay(String.format(
+					"Link viable: %.1f meters apart. (moving together)",
+					distance));
+			return true;
+		}
+
+		// log_nodisplay(String.format(
+		// "Link viable: %.1f meters apart. (moving apart)", distance));
+		log_nodisplay(String.format(
+				"Link not viable: %.1f meters apart. (moving apart)", distance));
+		return false;
+	}
 
 	/**
 	 * Determine whether two vehicle's location fixes indicate that a WiFi TCP
@@ -918,7 +1019,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 
 			// fix issues with unsigned byte going to signed int
 			// for now just keep last octet of ip addresses low (under 127)
-			mId = aat.getLocalAddress().getAddress()[3];
+			mId = Math.abs(aat.getLocalAddress().getAddress()[3]);
 
 			// Start recurring UDP adhoc announcements
 			myHandler.post(adhocAnnounceR);

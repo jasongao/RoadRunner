@@ -2,7 +2,7 @@ package edu.mit.csail.jasongao.roadrunner;
 
 public class Globals {
 	/** Adhoc parameters */
-	static final int ADHOC_MAX_PACKET_SIZE = 32768; // bytes
+	static final int ADHOC_MAX_PACKET_SIZE = 1024; // bytes
 	static final int ADHOC_ANNOUNCE_PORT = 4200;
 	static final long ADHOC_ANNOUNCE_PERIOD = 2000 * 1;
 	static boolean RELAY_ENABLED = false;
@@ -19,7 +19,9 @@ public class Globals {
 	final static public String ADHOC_BROADCAST_ADDRESS = "192.168.42.130";
 
 	/** Cloud parameters */
-	static final String CLOUD_HOST = "128.30.87.195";
+	//static final String CLOUD_HOST = "128.30.87.195"; // CSAIL macbook pro
+	static final String CLOUD_HOST = "108.243.175.186";
+	
 	static final int CLOUD_PORT = 50000;
 	static final int CLOUD_SOCKET_TIMEOUT = 3000;
 	static final byte[] CLOUD_PUBLIC_KEY = null; // TODO
