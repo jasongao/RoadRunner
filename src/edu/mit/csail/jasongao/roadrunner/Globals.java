@@ -3,24 +3,24 @@ package edu.mit.csail.jasongao.roadrunner;
 public class Globals {
 	/** Adhoc parameters */
 	static final int ADHOC_MAX_PACKET_SIZE = 1024; // bytes
-	static final int ADHOC_ANNOUNCE_PORT = 4200;
+	static final int ADHOC_RECV_PORT = 5001;
+	static final int ADHOC_SEND_PORT = 4200;
 	static final long ADHOC_ANNOUNCE_PERIOD = 2000 * 1;
 	static boolean RELAY_ENABLED = false;
 
 	/** Adhoc UDP + TCP token transfers */
 	// static final boolean ADHOC_UDP_ONLY = false;
 	// static final boolean ADHOC_UDP_ONLY = true;
-	// static final String ADHOC_IFACE_NAME = "eth0";
-	// final static public String ADHOC_BROADCAST_ADDRESS = "192.168.42.255";
+	// static final String ADHOC_IFACE_NAME = "wlan0";
+	// final static public String ADHOC_SEND_REMOTE_ADDRESS = "192.168.42.255";
 
 	/** DSRC / Adhoc UDP-only switch */
 	static final boolean ADHOC_UDP_ONLY = true;
 	static final String ADHOC_IFACE_NAME = "rndis0"; // tethered DSRC radio
-	final static public String ADHOC_BROADCAST_ADDRESS = "192.168.42.130";
+	final static public String ADHOC_SEND_REMOTE_ADDRESS = "192.168.42.255";
 
 	/** Cloud parameters */
-	//static final String CLOUD_HOST = "128.30.87.195"; // CSAIL macbook pro
-	static final String CLOUD_HOST = "108.243.175.186";
+	static final String CLOUD_HOST = "128.30.87.56"; // CSAIL macbook pro
 	
 	static final int CLOUD_PORT = 50000;
 	static final int CLOUD_SOCKET_TIMEOUT = 3000;
