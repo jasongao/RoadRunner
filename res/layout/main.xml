@@ -58,25 +58,11 @@
         </TextView>
     </LinearLayout>
 
-    <LinearLayout
-        android:id="@+id/ButtonsLayout"
-        android:layout_width="fill_parent"
+    <Button
+        android:id="@+id/start_stop_button"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal" >
-
-        <EditText
-            android:id="@+id/start_editText"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:inputType="number" />
-
-        <Button
-            android:id="@+id/start_stop_button"
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:text="START experiments" />
-    </LinearLayout>
+        android:text="START experiments" />
 
     <ListView
         android:id="@+id/msgList"
@@ -86,6 +72,27 @@
         android:stackFromBottom="true"
         android:transcriptMode="alwaysScroll" >
     </ListView>
+
+    <LinearLayout
+        android:id="@+id/ButtonsLayout3"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal" >
+
+        <EditText
+            android:id="@+id/ipv4_editText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:inputType="phone" 
+            android:text="192.168.42." />
+
+        <Button
+            android:id="@+id/ipv4_button"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:text="Set IP Address" />
+    </LinearLayout>
 
     <LinearLayout
         android:id="@+id/ButtonsLayout"
@@ -116,6 +123,13 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="1st" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/ButtonsLayout2"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal" >
 
         <Button
             android:id="@+id/connect_button"

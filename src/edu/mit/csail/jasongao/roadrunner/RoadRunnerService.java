@@ -2,6 +2,8 @@ package edu.mit.csail.jasongao.roadrunner;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.ObjectOutput;
@@ -562,8 +564,8 @@ public class RoadRunnerService extends Service implements LocationListener {
 					}
 					break;
 				case ResRequest.DEBUG_RESET:
-					writer.write(String.format("DEBUG-RESET %d %s\r\n", mId,
-							req.regionId));
+					writer.write(String.format("EXPT_DEBUG-RESET %d %s\r\n",
+							mId, req.regionId));
 					writer.flush();
 					log("Response: " + reader.readLine());
 					req.done = true;
@@ -850,7 +852,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 	}
 
 	public void resetCloud() {
-		log(String.format("Sending ResRequest for DEBUG-RESET"));
+		log(String.format("Sending ResRequest for EXPT_DEBUG-RESET"));
 		ResRequest r1 = new ResRequest(mId, ResRequest.DEBUG_RESET, "Vassar-1");
 		new ResRequestTask().execute(r1, Globals.CLOUD_HOST);
 	}
@@ -1006,20 +1008,27 @@ public class RoadRunnerService extends Service implements LocationListener {
 				Globals.REQUEST_PENALTY_CHECK_PERIOD);
 
 		if (this.adhocEnabled) {
-
 			// Start the adhoc UDP announcement thread
 			log("Starting adhoc announce thread...");
 			aat = new AdhocPacketThread(myHandler, this);
 			aat.start();
 
-			// Start the adhoc TCP server thread
-			log("Starting adhoc server thread...");
-			ast = new AdhocServerThread(mainHandler, this);
-			ast.start();
+			if (!Globals.ADHOC_UDP_ONLY) {
+				// Start the adhoc TCP server thread
+				log("Starting adhoc server thread...");
+				ast = new AdhocServerThread(mainHandler, this);
+				ast.start();
+			}
 
-			// fix issues with unsigned byte going to signed int
-			// for now just keep last octet of ip addresses low (under 127)
-			mId = Math.abs(aat.getLocalAddress().getAddress()[3]);
+			// take last octet of IPv4 address as my id
+			mId = (aat.getLocalAddress().getAddress()[3] & 0xff);
+			log("mId=" + mId);
+
+			/*
+			 * byte[] bytes = aat.getLocalAddress().getAddress(); long value =
+			 * 0; for (int i = 0; i < bytes.length; i++) { value = (value << 8)
+			 * + (bytes[i] & 0xff); } mId = value;
+			 */
 
 			// Start recurring UDP adhoc announcements
 			myHandler.post(adhocAnnounceR);

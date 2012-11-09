@@ -1,6 +1,9 @@
 package edu.mit.csail.jasongao.roadrunner;
 
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
 import java.io.File;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,6 +28,7 @@ import android.view.View.OnClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -446,6 +450,7 @@ public class MainActivity extends Activity implements OnInitListener {
 		findViewById(R.id.connect_button).setOnClickListener(mClicked);
 		findViewById(R.id.reset_button).setOnClickListener(mClicked);
 		findViewById(R.id.start_stop_button).setOnClickListener(mClicked);
+		findViewById(R.id.ipv4_button).setOnClickListener(mClicked);
 
 		receivedMessages = new ArrayAdapter<String>(this, R.layout.message);
 		((ListView) findViewById(R.id.msgList)).setAdapter(receivedMessages);
@@ -570,11 +575,51 @@ public class MainActivity extends Activity implements OnInitListener {
 	/***********************************************
 	 * ResRequest
 	 ***********************************************/
+	
+	public void doRootCmds(List<String> cmds) throws Exception {
+		Process process = Runtime.getRuntime().exec("su");
+		DataOutputStream os = new DataOutputStream(process.getOutputStream());
+
+		for (String tmpCmd : cmds) {
+			log("# " + tmpCmd);
+			os.writeBytes(tmpCmd + "\n");
+		}
+
+		os.writeBytes("exit\n");
+		os.flush();
+		os.close();
+
+		process.waitFor();
+
+		BufferedReader br = new BufferedReader(new InputStreamReader(
+				process.getInputStream()));
+		process.waitFor();
+		StringBuffer sb = new StringBuffer();
+		String line;
+		while ((line = br.readLine()) != null) {
+			sb.append(line).append("\n");
+		}
+		String result = sb.toString();
+		log(result);
+	}
 
 	// Buttons
 	private final OnClickListener mClicked = new OnClickListener() {
 		public void onClick(View v) {
 			switch (v.getId()) {
+			case R.id.ipv4_button:
+				EditText ipv4AddressTV = (EditText) findViewById(R.id.ipv4_editText);
+				// Setup the interface
+				List<String> cmds = new ArrayList<String>();
+				cmds.add("/system/bin/ifconfig " + Globals.ADHOC_IFACE_NAME
+						+ " " + ipv4AddressTV.getText().toString() + " up");
+				try {
+					doRootCmds(cmds);
+				} catch (Exception e) {
+					log("error setting up " + Globals.ADHOC_IFACE_NAME);
+					e.printStackTrace();
+				}
+				break;
 			case R.id.start_stop_button:
 				myHandler.removeCallbacks(startExperimentR);
 				myHandler.removeCallbacks(endExperimentR);
@@ -582,11 +627,14 @@ public class MainActivity extends Activity implements OnInitListener {
 				CheckBox firstSetCheckbox = (CheckBox) findViewById(R.id.firstset_checkbox);
 				firstSet = firstSetCheckbox.isChecked();
 				/*
-				 * if (firstSet) { Globals.EXPT_LENGTH = 10 * 60 * 1000; // 10
-				 * min } else { Globals.EXPT_LENGTH = 5 * 60 * 1000; // 5 min }
-				 */
+				 if (firstSet) {
+					 Globals.EXPT_LENGTH = 10 * 60 * 1000; // 10 min
+				 } else {
+					 Globals.EXPT_LENGTH = 5 * 60 * 1000; // 5 min }
+				 }
+				*/
 
-				if (Globals.DEBUG) {
+				if (Globals.EXPT_DEBUG) {
 					Globals.EXPT_LENGTH = 1 * 60 * 1000;
 				}
 

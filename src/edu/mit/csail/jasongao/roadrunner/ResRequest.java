@@ -47,7 +47,7 @@ public class ResRequest implements Serializable {
 
 	/** Checks signature and expiration */
 	public boolean tokenIsValid() {
-		// TODO DEBUG
+		// TODO EXPT_DEBUG
 		if (true)
 			return true;
 
