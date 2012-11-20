@@ -28,6 +28,8 @@ import android.view.View.OnClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.CompoundButton;
+import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -444,6 +446,22 @@ public class MainActivity extends Activity implements OnInitListener {
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		
+		// Toggle for DSRC vs Adhoc
+		CheckBox ifaceCheckBox = ( CheckBox ) findViewById( R.id.iface_checkbox );
+		ifaceCheckBox.setOnCheckedChangeListener(new OnCheckedChangeListener()
+		{
+		    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked)
+		    {
+		        if ( isChecked )
+		        {
+		            Globals.ADHOC_IFACE_NAME = "rndis0";
+		        } else {
+		        	Globals.ADHOC_IFACE_NAME = "eth0";
+		        }
+		        log(String.format("selected interface %s", Globals.ADHOC_IFACE_NAME));
+		    }
+		});
 
 		// UI
 		setContentView(R.layout.main);

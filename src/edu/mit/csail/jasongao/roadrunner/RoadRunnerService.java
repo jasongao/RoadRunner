@@ -2,8 +2,6 @@ package edu.mit.csail.jasongao.roadrunner;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.ObjectOutput;
@@ -1371,6 +1369,9 @@ public class RoadRunnerService extends Service implements LocationListener {
 	/** Location - location changed */
 	@Override
 	public void onLocationChanged(Location loc) {
+		// log GPS traces
+		log(String.format("loc=%s", loc.toString()));
+		
 		// sync internal clock to GPS on first fix
 		/*
 		 * if (!MainActivity.clockSynced) { MainActivity.clockOffset =

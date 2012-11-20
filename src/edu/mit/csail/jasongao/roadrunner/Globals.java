@@ -7,9 +7,10 @@ public class Globals {
 	static final int ADHOC_MAX_PACKET_SIZE = 1024; // bytes
 	static final int ADHOC_RECV_PORT = 5001;
 	static final int ADHOC_SEND_PORT = 4200;
-	// static final String ADHOC_IFACE_NAME = "wlan0"; // adhoc wifi
-	static final String ADHOC_IFACE_NAME = "rndis0"; // tethered DSRC radio
 	final static public String ADHOC_SEND_REMOTE_ADDRESS = "192.168.42.255";
+	
+	/** Now set in MainActivity.onCreate() */
+	static String ADHOC_IFACE_NAME = "eth0"; // default to adhoc wifi
 	
 	/** Cloud parameters */
 	static final String CLOUD_HOST = "128.30.87.56"; // runs cloud.py
