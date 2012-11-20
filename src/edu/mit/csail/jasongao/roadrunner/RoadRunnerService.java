@@ -143,7 +143,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 				}
 
 				long now = getTime();
-				log(String.format("Received UDP %s", other));
+				log_nodisplay(String.format("Received UDP %s", other));
 
 				if (other.triggerAnnounce) {
 					adhocAnnounce(false);
@@ -300,7 +300,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 	 *            Location of vehicle 2
 	 * @return true is the link is viable, false if not
 	 */
-	private boolean linkIsViableDSRC(Location v1, AdhocPacket other) {
+	private boolean linkIsViableDSRCComplex(Location v1, AdhocPacket other) {
 		Location v2 = other.getLocation();
 
 		if (v1 == null || v2 == null) {
@@ -388,6 +388,35 @@ public class RoadRunnerService extends Service implements LocationListener {
 		log_nodisplay(String.format(
 				"Link not viable: %.1f meters apart. (moving apart)", distance));
 		return false;
+	}
+
+	/**
+	 * Determine whether two vehicle's location fixes indicate that a DSRC UDP
+	 * link is viable for a token transfer / other communications
+	 * 
+	 * @param v1
+	 *            Location of vehicle 1
+	 * @param v2
+	 *            Location of vehicle 2
+	 * @return true is the link is viable, false if not
+	 */
+	private boolean linkIsViableDSRC(Location v1, AdhocPacket other) {
+		Location v2 = other.getLocation();
+
+		if (v1 == null || v2 == null) {
+			log_nodisplay("Link not viable: GPS disabled");
+			return false;
+		}
+
+		float distance = v1.distanceTo(v2);
+		long threshold = 250;
+		boolean viable = (distance < threshold);
+
+		log_nodisplay(String.format(
+				"Link %s: %.1f meters apart (threshold %d). v1=%s v2=%s",
+				viable ? "viable" : "not viable", distance, threshold, v1, v2));
+
+		return viable;
 	}
 
 	/**
@@ -562,8 +591,8 @@ public class RoadRunnerService extends Service implements LocationListener {
 					}
 					break;
 				case ResRequest.DEBUG_RESET:
-					writer.write(String.format("EXPT_DEBUG-RESET %d %s\r\n",
-							mId, req.regionId));
+					writer.write(String.format("DEBUG-RESET %d %s\r\n", mId,
+							req.regionId));
 					writer.flush();
 					log("Response: " + reader.readLine());
 					req.done = true;
@@ -850,7 +879,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 	}
 
 	public void resetCloud() {
-		log(String.format("Sending ResRequest for EXPT_DEBUG-RESET"));
+		log(String.format("Sending ResRequest for DEBUG-RESET"));
 		ResRequest r1 = new ResRequest(mId, ResRequest.DEBUG_RESET, "Vassar-1");
 		new ResRequestTask().execute(r1, Globals.CLOUD_HOST);
 	}
@@ -1370,8 +1399,8 @@ public class RoadRunnerService extends Service implements LocationListener {
 	@Override
 	public void onLocationChanged(Location loc) {
 		// log GPS traces
-		log(String.format("loc=%s", loc.toString()));
-		
+		log_nodisplay(String.format("loc=%s", loc.toString()));
+
 		// sync internal clock to GPS on first fix
 		/*
 		 * if (!MainActivity.clockSynced) { MainActivity.clockOffset =

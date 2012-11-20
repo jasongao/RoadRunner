@@ -414,7 +414,7 @@ public class MainActivity extends Activity implements OnInitListener {
 			// Adhoc ON, SUPERDENSE Tokens, Trial 1
 			// say("WiFi on. Super dense tokens. Trial 1.");
 			Globals.REQUEST_DIRECT_PUT_DEADLINE_FROM_NOW = 10 * 60 * 1000;
-			Globals.REQUEST_DIRECT_PUT_DEADLINE_FROM_NOW = 10 * 60 * 1000;
+			Globals.REQUEST_DIRECT_GET_DEADLINE_FROM_NOW = 10 * 60 * 1000;
 			((CheckBox) findViewById(R.id.adhoc_checkbox)).setChecked(true);
 			((CheckBox) findViewById(R.id.ondemand_checkbox)).setChecked(true);
 			doBindService();
@@ -446,25 +446,21 @@ public class MainActivity extends Activity implements OnInitListener {
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		
-		// Toggle for DSRC vs Adhoc
-		CheckBox ifaceCheckBox = ( CheckBox ) findViewById( R.id.iface_checkbox );
-		ifaceCheckBox.setOnCheckedChangeListener(new OnCheckedChangeListener()
-		{
-		    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked)
-		    {
-		        if ( isChecked )
-		        {
-		            Globals.ADHOC_IFACE_NAME = "rndis0";
-		        } else {
-		        	Globals.ADHOC_IFACE_NAME = "eth0";
-		        }
-		        log(String.format("selected interface %s", Globals.ADHOC_IFACE_NAME));
-		    }
-		});
 
 		// UI
 		setContentView(R.layout.main);
+
+		// Toggle for DSRC vs Adhoc
+		CheckBox ifaceCheckBox = (CheckBox) findViewById(R.id.iface_checkbox);
+		ifaceCheckBox.setOnCheckedChangeListener(new OnCheckedChangeListener() {
+			public void onCheckedChanged(CompoundButton buttonView,
+					boolean isChecked) {
+				Globals.ADHOC_IFACE_NAME = isChecked ? "usb0" : "eth0";
+				log(String.format("selected interface %s",
+						Globals.ADHOC_IFACE_NAME));
+			}
+		});
+
 		findViewById(R.id.connect_button).setOnClickListener(mClicked);
 		findViewById(R.id.reset_button).setOnClickListener(mClicked);
 		findViewById(R.id.start_stop_button).setOnClickListener(mClicked);
@@ -593,7 +589,7 @@ public class MainActivity extends Activity implements OnInitListener {
 	/***********************************************
 	 * ResRequest
 	 ***********************************************/
-	
+
 	public void doRootCmds(List<String> cmds) throws Exception {
 		Process process = Runtime.getRuntime().exec("su");
 		DataOutputStream os = new DataOutputStream(process.getOutputStream());
@@ -626,17 +622,42 @@ public class MainActivity extends Activity implements OnInitListener {
 		public void onClick(View v) {
 			switch (v.getId()) {
 			case R.id.ipv4_button:
+				
+				// DEBUG DISABLE ROOT COMMANDS UNDER GINGERBREAD, BROKEN
+				if (true)
+					break;
+				
 				EditText ipv4AddressTV = (EditText) findViewById(R.id.ipv4_editText);
-				// Setup the interface
+
 				List<String> cmds = new ArrayList<String>();
-				cmds.add("/system/bin/ifconfig " + Globals.ADHOC_IFACE_NAME
-						+ " " + ipv4AddressTV.getText().toString() + " up");
+				
+				if (Globals.ADHOC_IFACE_NAME == "usb0") {
+					// Set ip for the DSRC interface
+					cmds.add("/system/bin/ifconfig " + Globals.ADHOC_IFACE_NAME
+							+ " " + ipv4AddressTV.getText().toString() + " up");
+				} else if (Globals.ADHOC_IFACE_NAME == "eth0"
+						|| Globals.ADHOC_IFACE_NAME == "wlan0") {
+					// Load wifi driver, set ad-hoc mode, set ip
+					/*
+					cmds.add("/data/adhoc/wifi load");
+					cmds.add("/data/adhoc/iwconfig " + Globals.ADHOC_IFACE_NAME
+							+ " mode ad-hoc");
+					cmds.add("/data/adhoc/iwconfig " + Globals.ADHOC_IFACE_NAME
+							+ " channel 1");
+					cmds.add("/data/adhoc/iwconfig " + Globals.ADHOC_IFACE_NAME
+							+ " essid 'roadres'");
+					*/
+					cmds.add("/system/bin/ifconfig " + Globals.ADHOC_IFACE_NAME
+							+ " " + ipv4AddressTV.getText().toString() + " up");
+				}
+
 				try {
 					doRootCmds(cmds);
 				} catch (Exception e) {
 					log("error setting up " + Globals.ADHOC_IFACE_NAME);
 					e.printStackTrace();
 				}
+
 				break;
 			case R.id.start_stop_button:
 				myHandler.removeCallbacks(startExperimentR);
@@ -645,12 +666,10 @@ public class MainActivity extends Activity implements OnInitListener {
 				CheckBox firstSetCheckbox = (CheckBox) findViewById(R.id.firstset_checkbox);
 				firstSet = firstSetCheckbox.isChecked();
 				/*
-				 if (firstSet) {
-					 Globals.EXPT_LENGTH = 10 * 60 * 1000; // 10 min
-				 } else {
-					 Globals.EXPT_LENGTH = 5 * 60 * 1000; // 5 min }
-				 }
-				*/
+				 * if (firstSet) { Globals.EXPT_LENGTH = 10 * 60 * 1000; // 10
+				 * min } else { Globals.EXPT_LENGTH = 5 * 60 * 1000; // 5 min }
+				 * }
+				 */
 
 				if (Globals.EXPT_DEBUG) {
 					Globals.EXPT_LENGTH = 1 * 60 * 1000;

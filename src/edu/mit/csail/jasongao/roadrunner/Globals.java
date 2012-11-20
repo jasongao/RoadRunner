@@ -35,7 +35,7 @@ public class Globals {
 	static long EXPT_START_DELAY = 1 * 15 * 1000;
 	static long RESET_SERVER_DELAY = 1 * 15 * 1000;
 	static long EXPT_LENGTH = 10 * 60 * 1000; // TODO now set in MainActivity
-	static final boolean EXPT_DEBUG = false; // short 1 minute expts for test
+	static final boolean EXPT_DEBUG = true; // short 1 minute expts for test
 
 	/** Times */	
 	static final long START_TIME_1 = 1336158480L * 1000L - 3600 * 1000; // GMT-4
