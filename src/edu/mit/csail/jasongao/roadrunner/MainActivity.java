@@ -464,6 +464,7 @@ public class MainActivity extends Activity implements OnInitListener {
 		findViewById(R.id.connect_button).setOnClickListener(mClicked);
 		findViewById(R.id.reset_button).setOnClickListener(mClicked);
 		findViewById(R.id.start_stop_button).setOnClickListener(mClicked);
+		findViewById(R.id.mark_button).setOnClickListener(mClicked);
 		findViewById(R.id.ipv4_button).setOnClickListener(mClicked);
 
 		receivedMessages = new ArrayAdapter<String>(this, R.layout.message);
@@ -658,6 +659,9 @@ public class MainActivity extends Activity implements OnInitListener {
 					e.printStackTrace();
 				}
 
+				break;
+			case R.id.mark_button:
+				log("--- MARK LOG BUTTON PRESSED ---");
 				break;
 			case R.id.start_stop_button:
 				myHandler.removeCallbacks(startExperimentR);

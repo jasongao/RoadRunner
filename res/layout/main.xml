@@ -72,6 +72,12 @@
         android:stackFromBottom="true"
         android:transcriptMode="alwaysScroll" >
     </ListView>
+    
+    <Button
+        android:id="@+id/mark_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="MARK log" />
 
     <LinearLayout
         android:id="@+id/ButtonsLayout3"

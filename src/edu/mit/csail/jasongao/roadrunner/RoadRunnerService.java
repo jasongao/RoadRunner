@@ -80,6 +80,8 @@ public class RoadRunnerService extends Service implements LocationListener {
 	private Location mLoc;
 	private String mRegion = "FREE";
 	private long mId = -1000;
+	
+	private long udpStartTime = 0;
 
 	/** Reservations we are using/will use. Map regionId to done ResRequest */
 	private Map<String, ResRequest> reservationsInUse;
@@ -187,7 +189,8 @@ public class RoadRunnerService extends Service implements LocationListener {
 						log("Nonce seen before, ignoring duplicate token sent.");
 						break;
 					} else {
-						log("Nonce NOT seen before, receiving token sent.");
+						long udpLatency = getTime() - udpStartTime;
+						log(String.format("Nonce NOT seen before, receiving token sent, UDP token transfer round-trip latency %d ms", udpLatency));
 						noncesHeard.get(other.src).add(other.nonce);
 					}
 
@@ -252,6 +255,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 												queueKeySet(getsPending),
 												req.regionId));
 
+								udpStartTime = getTime();
 								new SendPacketsTask().execute(p);
 							} else { // TCP pathway
 
