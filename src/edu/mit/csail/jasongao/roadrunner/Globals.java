@@ -5,12 +5,12 @@ public class Globals {
 	static final long ADHOC_ANNOUNCE_PERIOD = 2000 * 1;
 	static final boolean ADHOC_UDP_ONLY = true; // false to use TCP for transfer
 	static final int ADHOC_MAX_PACKET_SIZE = 1024; // bytes
-	static final int ADHOC_RECV_PORT = 4200; // set send and recv port same for adhoc WiFi
-	static final int ADHOC_SEND_PORT = 4200;
 	final static public String ADHOC_SEND_REMOTE_ADDRESS = "192.168.42.255";
 	
 	/** Now set in MainActivity.onCreate() */
 	static String ADHOC_IFACE_NAME = "eth0"; // default to adhoc wifi
+	static int ADHOC_RECV_PORT = 4200; // set send and recv port same for adhoc WiFi
+	static int ADHOC_SEND_PORT = 4200;
 	
 	/** Cloud parameters */
 	static final String CLOUD_HOST = "128.30.87.56"; // runs cloud.py

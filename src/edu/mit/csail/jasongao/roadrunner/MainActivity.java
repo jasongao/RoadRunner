@@ -454,10 +454,14 @@ public class MainActivity extends Activity implements OnInitListener {
 		CheckBox ifaceCheckBox = (CheckBox) findViewById(R.id.iface_checkbox);
 		ifaceCheckBox.setOnCheckedChangeListener(new OnCheckedChangeListener() {
 			public void onCheckedChanged(CompoundButton buttonView,
-					boolean isChecked) {
-				Globals.ADHOC_IFACE_NAME = isChecked ? "usb0" : "eth0";
-				log(String.format("selected interface %s",
-						Globals.ADHOC_IFACE_NAME));
+					boolean isDSRC) {
+				Globals.ADHOC_IFACE_NAME = isDSRC ? "usb0" : "eth0";
+				Globals.ADHOC_SEND_PORT = isDSRC ? 4200 : 4200;
+				Globals.ADHOC_RECV_PORT = isDSRC ? 5001 : 4200;
+				log(String.format(
+						"selected interface %s, send port %d, recv port %d",
+						Globals.ADHOC_IFACE_NAME, Globals.ADHOC_SEND_PORT,
+						Globals.ADHOC_RECV_PORT));
 			}
 		});
 
@@ -623,15 +627,15 @@ public class MainActivity extends Activity implements OnInitListener {
 		public void onClick(View v) {
 			switch (v.getId()) {
 			case R.id.ipv4_button:
-				
+
 				// DEBUG DISABLE ROOT COMMANDS UNDER GINGERBREAD, BROKEN
 				if (true)
 					break;
-				
+
 				EditText ipv4AddressTV = (EditText) findViewById(R.id.ipv4_editText);
 
 				List<String> cmds = new ArrayList<String>();
-				
+
 				if (Globals.ADHOC_IFACE_NAME == "usb0") {
 					// Set ip for the DSRC interface
 					cmds.add("/system/bin/ifconfig " + Globals.ADHOC_IFACE_NAME
@@ -640,14 +644,14 @@ public class MainActivity extends Activity implements OnInitListener {
 						|| Globals.ADHOC_IFACE_NAME == "wlan0") {
 					// Load wifi driver, set ad-hoc mode, set ip
 					/*
-					cmds.add("/data/adhoc/wifi load");
-					cmds.add("/data/adhoc/iwconfig " + Globals.ADHOC_IFACE_NAME
-							+ " mode ad-hoc");
-					cmds.add("/data/adhoc/iwconfig " + Globals.ADHOC_IFACE_NAME
-							+ " channel 1");
-					cmds.add("/data/adhoc/iwconfig " + Globals.ADHOC_IFACE_NAME
-							+ " essid 'roadres'");
-					*/
+					 * cmds.add("/data/adhoc/wifi load");
+					 * cmds.add("/data/adhoc/iwconfig " +
+					 * Globals.ADHOC_IFACE_NAME + " mode ad-hoc");
+					 * cmds.add("/data/adhoc/iwconfig " +
+					 * Globals.ADHOC_IFACE_NAME + " channel 1");
+					 * cmds.add("/data/adhoc/iwconfig " +
+					 * Globals.ADHOC_IFACE_NAME + " essid 'roadres'");
+					 */
 					cmds.add("/system/bin/ifconfig " + Globals.ADHOC_IFACE_NAME
 							+ " " + ipv4AddressTV.getText().toString() + " up");
 				}
