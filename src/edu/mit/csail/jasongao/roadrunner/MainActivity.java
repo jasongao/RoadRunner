@@ -470,6 +470,8 @@ public class MainActivity extends Activity implements OnInitListener {
 		findViewById(R.id.start_stop_button).setOnClickListener(mClicked);
 		findViewById(R.id.mark_button).setOnClickListener(mClicked);
 		findViewById(R.id.ipv4_button).setOnClickListener(mClicked);
+		findViewById(R.id.debug_offer_button).setOnClickListener(mClicked);
+		findViewById(R.id.debug_request_button).setOnClickListener(mClicked);
 
 		receivedMessages = new ArrayAdapter<String>(this, R.layout.message);
 		((ListView) findViewById(R.id.msgList)).setAdapter(receivedMessages);
@@ -596,6 +598,10 @@ public class MainActivity extends Activity implements OnInitListener {
 	 ***********************************************/
 
 	public void doRootCmds(List<String> cmds) throws Exception {
+		// Disable under Gingerbread / Saurom, broken...
+		if (true)
+			return;
+		
 		Process process = Runtime.getRuntime().exec("su");
 		DataOutputStream os = new DataOutputStream(process.getOutputStream());
 
@@ -626,12 +632,8 @@ public class MainActivity extends Activity implements OnInitListener {
 	private final OnClickListener mClicked = new OnClickListener() {
 		public void onClick(View v) {
 			switch (v.getId()) {
+			
 			case R.id.ipv4_button:
-
-				// DEBUG DISABLE ROOT COMMANDS UNDER GINGERBREAD, BROKEN
-				if (true)
-					break;
-
 				EditText ipv4AddressTV = (EditText) findViewById(R.id.ipv4_editText);
 
 				List<String> cmds = new ArrayList<String>();
@@ -711,6 +713,18 @@ public class MainActivity extends Activity implements OnInitListener {
 			case R.id.reset_button:
 				if (mBound) {
 					mService.resetCloud();
+				}
+				break;
+				
+			case R.id.debug_offer_button:
+				if (mBound) {
+					mService.makeOfferRouteVassar();
+				}				
+				break;
+			
+			case R.id.debug_request_button:
+				if (mBound) {
+					mService.makeReservationRouteVassar();
 				}
 				break;
 

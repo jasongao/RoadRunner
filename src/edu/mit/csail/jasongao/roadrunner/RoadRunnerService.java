@@ -80,7 +80,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 	private Location mLoc;
 	private String mRegion = "FREE";
 	private long mId = -1000;
-	
+
 	private long udpStartTime = 0;
 
 	/** Reservations we are using/will use. Map regionId to done ResRequest */
@@ -190,7 +190,9 @@ public class RoadRunnerService extends Service implements LocationListener {
 						break;
 					} else {
 						long udpLatency = getTime() - udpStartTime;
-						log(String.format("Nonce NOT seen before, receiving token sent, UDP token transfer round-trip latency %d ms", udpLatency));
+						log(String
+								.format("Nonce NOT seen before, receiving token sent, UDP token transfer round-trip latency %d ms",
+										udpLatency));
 						noncesHeard.get(other.src).add(other.nonce);
 					}
 
@@ -888,6 +890,30 @@ public class RoadRunnerService extends Service implements LocationListener {
 		new ResRequestTask().execute(r1, Globals.CLOUD_HOST);
 	}
 
+	public void makeReservationRouteVassar() {
+		log(String.format("Making DEBUG ResRequest for Vassar-1"));
+		makeRequest(new ResRequest(mId, ResRequest.RES_GET, "Vassar-1"));
+	}
+
+	public void makeOfferRouteVassar() {
+		log(String.format("Making DEBUG Offer for Vassar-1"));
+		// TODO
+		ResRequest res = new ResRequest(mId, ResRequest.RES_GET, "Vassar-1");
+		
+		res = new ResRequest(mId, ResRequest.RES_GET, "Vassar-1");
+		res.done = true;
+		res.completed = getTime();
+		res.tokenString = "DEBUG";
+		res.signature = "DEBUG";
+		res.issued = getTime();
+		res.expires = getTime() + 30*60*1000;
+		res.hardDeadline = res.completed
+				+ Globals.REQUEST_DIRECT_PUT_DEADLINE_FROM_NOW;
+		this.offers.add(res);
+
+		log(String.format("Added to offers: %s", res.regionId));
+	}
+
 	public void makeReservationRouteA() {
 		log(String.format("Making ResRequests for route A"));
 		makeRequest(new ResRequest(mId, ResRequest.RES_GET, "Vassar-1"));
@@ -1434,7 +1460,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 				this.penalties.add(oldRes);
 			} else {
 				oldRes.hardDeadline = now
-						+ Globals.REQUEST_DIRECT_GET_DEADLINE_FROM_NOW;
+						+ Globals.REQUEST_DIRECT_PUT_DEADLINE_FROM_NOW;
 				this.offers.add(oldRes);
 			}
 		}
