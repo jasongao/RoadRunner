@@ -178,7 +178,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 					}
 
 				} else if (other.type == AdhocPacket.TOKEN_SEND) {
-
+					long udpStopTime = System.currentTimeMillis();
 					// Check if already received this packet copy
 					if (!noncesHeard.containsKey(other.src)) {
 						noncesHeard.put(other.src, new HashSet<Long>());
@@ -189,7 +189,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 						log("Nonce seen before, ignoring duplicate token sent.");
 						break;
 					} else {
-						long udpLatency = getTime() - udpStartTime;
+						long udpLatency = udpStopTime - udpStartTime;
 						log(String
 								.format("Nonce NOT seen before, receiving token sent, UDP token transfer round-trip latency %d ms",
 										udpLatency));
@@ -257,7 +257,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 												queueKeySet(getsPending),
 												req.regionId));
 
-								udpStartTime = getTime();
+								udpStartTime = System.currentTimeMillis();
 								new SendPacketsTask().execute(p);
 							} else { // TCP pathway
 
@@ -872,7 +872,6 @@ public class RoadRunnerService extends Service implements LocationListener {
 	 ***********************************************/
 
 	public void makeRequest(ResRequest r1) {
-		String newRegion = r1.regionId;
 		log(String.format("Adding new pending request for %s.", r1.regionId));
 		if (this.adhocEnabled) {
 			getsPending.add(r1); // queue up requests
@@ -890,17 +889,18 @@ public class RoadRunnerService extends Service implements LocationListener {
 		new ResRequestTask().execute(r1, Globals.CLOUD_HOST);
 	}
 
-	public void makeReservationRouteVassar() {
-		log(String.format("Making DEBUG ResRequest for Vassar-1"));
-		makeRequest(new ResRequest(mId, ResRequest.RES_GET, "Vassar-1"));
+	/*** DEBUG make a fake request to test token transfers */
+	public void makeReservationRouteStata() {
+		log(String.format("Making DEBUG ResRequest for Stata-1"));
+		makeRequest(new ResRequest(mId, ResRequest.RES_GET, "Stata-1"));
 	}
 
-	public void makeOfferRouteVassar() {
+	/*** DEBUG make a fake offer to test token transfers */
+	public void makeOfferRouteStata() {
 		log(String.format("Making DEBUG Offer for Vassar-1"));
-		// TODO
-		ResRequest res = new ResRequest(mId, ResRequest.RES_GET, "Vassar-1");
 		
-		res = new ResRequest(mId, ResRequest.RES_GET, "Vassar-1");
+		ResRequest res = new ResRequest(mId, ResRequest.RES_GET, "Stata-1");
+		res = new ResRequest(mId, ResRequest.RES_GET, "Stata-1");
 		res.done = true;
 		res.completed = getTime();
 		res.tokenString = "DEBUG";
@@ -1473,7 +1473,16 @@ public class RoadRunnerService extends Service implements LocationListener {
 
 	public void regionTransition(String oldRegion, String newRegion) {
 		this.mRegion = newRegion;
-		long now = getTime();
+		
+		// Log whether old reservation was a penalty reservation or not
+		if (this.reservationsInUse.containsKey(oldRegion)) {
+			ResRequest oldRes = this.reservationsInUse.get(oldRegion);
+			if (oldRes.type == ResRequest.PENALTY) {
+				log(String.format("exited region %s with PENALTY reservation", oldRegion));
+			} else {
+				log(String.format("exited region %s with VALID reservation", oldRegion));
+			}
+		}
 
 		// Offer old reservation
 		offerReservationIfInUse(oldRegion);

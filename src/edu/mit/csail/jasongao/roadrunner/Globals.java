@@ -11,10 +11,10 @@ public class Globals {
 	static String ADHOC_IFACE_NAME = "eth0"; // default to adhoc wifi
 	static int ADHOC_RECV_PORT = 4200; // set send and recv port same for adhoc WiFi
 	static int ADHOC_SEND_PORT = 4200;
+	static int CLOUD_PORT = 50000; // 50001 for wifi, 50000 for dsrc
 	
 	/** Cloud parameters */
-	static final String CLOUD_HOST = "128.30.87.56"; // runs cloud.py
-	static final int CLOUD_PORT = 50000;
+	static final String CLOUD_HOST = "128.30.87.68";
 	static final int CLOUD_SOCKET_TIMEOUT = 3000;
 	static final byte[] CLOUD_PUBLIC_KEY = null; // TODO
 	static final byte[] MY_PRIVATE_KEY = null; // TODO
@@ -30,19 +30,16 @@ public class Globals {
 	/** Relaying cloud accesses through other devices with hot links */
 	static boolean RELAY_ENABLED = false; // doesn't work well currently
 	static final int LAST_DATA_ACTIVITY_THRESHOLD = 8000;
+	
+	/** Navigation */
+	static boolean NAV_SPEECH = true;
+	static boolean NAV_REQUESTS = true;
+	static boolean SUPER_DENSE_REQUESTS = false; // for super-dense test
 
 	/** Experiment automation */
 	static long EXPT_START_DELAY = 1 * 15 * 1000;
 	static long RESET_SERVER_DELAY = 1 * 15 * 1000;
 	static long EXPT_LENGTH = 10 * 60 * 1000; // TODO now set in MainActivity
 	static final boolean EXPT_DEBUG = true; // short 1 minute expts for test
-
-	/** Times */	
-	static final long START_TIME_1 = 1336158480L * 1000L - 3600 * 1000; // GMT-4
-	static final long START_TIME_2 = 1335544500L * 1000L; // GMT-4
-
-	/** Navigation */
-	static final boolean NAV_SPEECH = false;
-	static final boolean NAV_REQUESTS = false;
-	static final boolean SUPER_DENSE_REQUESTS = true; // for super-dense test
+	static long START_TIME = 1354161600L * 1000L; // GMT-4
 }

@@ -133,103 +133,14 @@ public class MainActivity extends Activity implements OnInitListener {
 	private boolean firstSet = false;
 	private int experimentNumber = 0;
 
-	private void startExperimentNum() {
-		log(String.format("------ STARTING EXPERIMENT %d ------",
-				experimentNumber));
-		say(String.format("Starting experiment %d.", experimentNumber));
-
-		switch (experimentNumber) {
-		case 0:
-			experimentNumber++;
-
-			// Wait until 2:08pm to start first experiment
-			long timeUntilFirstExperiment = Globals.START_TIME_1
-					- System.currentTimeMillis();
-			log(String.format("%d - %d = %d msecs until 2:08PM",
-					Globals.START_TIME_1, System.currentTimeMillis(),
-					timeUntilFirstExperiment));
-			myHandler.postDelayed(resetServerR, timeUntilFirstExperiment);
-			say(String.format("Synchronizing in %5d minutes.",
-					(int) (timeUntilFirstExperiment / 1000 / 60)));
-			break;
-		case 1:
-			// Adhoc ON, SUPERDENSE Tokens, Trial 1
-			// say("WiFi on. Super dense tokens. Trial 1.");
-			Globals.REQUEST_DIRECT_PUT_DEADLINE_FROM_NOW = 10 * 60 * 1000;
-			Globals.REQUEST_DIRECT_PUT_DEADLINE_FROM_NOW = 10 * 60 * 1000;
-			((CheckBox) findViewById(R.id.adhoc_checkbox)).setChecked(true);
-			((CheckBox) findViewById(R.id.ondemand_checkbox)).setChecked(true);
-			doBindService();
-			say("Continue looping on Vassar Street.");
-
-			// End the experiment after a while
-			myHandler.postDelayed(endExperimentR, Globals.EXPT_LENGTH);
-			break;
-		case 2:
-			// Adhoc ON, SUPERDENSE Tokens, Trial 2
-			// say("WiFi on. Super dense tokens. Trial 2.");
-			Globals.REQUEST_DIRECT_PUT_DEADLINE_FROM_NOW = 10 * 60 * 1000;
-			Globals.REQUEST_DIRECT_PUT_DEADLINE_FROM_NOW = 10 * 60 * 1000;
-			((CheckBox) findViewById(R.id.adhoc_checkbox)).setChecked(true);
-			((CheckBox) findViewById(R.id.ondemand_checkbox)).setChecked(true);
-			doBindService();
-			say("Continue looping on Vassar Street.");
-
-			// End the experiment after a while
-			myHandler.postDelayed(endExperimentR, Globals.EXPT_LENGTH);
-			break;
-		default:
-			say("Experiments complete. Please return or park your vehicle and bring this phone back to the Stata Center, Gates tower, 7th floor.");
-			break;
-		}
-	}
-
+	/*** Nov 30 2012 */
 	private Runnable endExperimentR = new Runnable() {
 		public void run() {
 			log(String.format("##### endExperimentR %d", experimentNumber));
 			logWriter.flush();
+
+			// experiment experimentNumber ended.
 			switch (experimentNumber) {
-			case 0:
-				experimentNumber++;
-				myHandler.postDelayed(resetServerR, Globals.RESET_SERVER_DELAY);
-				break;
-			case 1:
-				experimentNumber++;
-				myHandler.postDelayed(resetServerR, Globals.RESET_SERVER_DELAY);
-				break;
-			case 2:
-				say("Experiments complete. Please return or park your vehicle and bring this phone back to the Stata Center, Gates tower, 7th floor.");
-				break;
-			default:
-				break;
-			}
-		}
-	};
-
-	/** Reset the server in the interlude between experiments. */
-	private Runnable resetServerR = new Runnable() {
-		public void run() {
-			log("------ SERVER RESET ------");
-			if (mService != null) {
-				mService.resetCloud();
-			}
-			doUnbindService();
-
-			myHandler.postDelayed(startExperimentR, Globals.EXPT_START_DELAY);
-		}
-	};
-
-	private Runnable endExperimentR_old = new Runnable() {
-		public void run() {
-			log(String.format("##### endExperimentR %d", experimentNumber));
-			logWriter.flush();
-
-			switch (experimentNumber) {
-			case 0:
-				// say("Continue driving along the default route.");
-				experimentNumber++;
-				myHandler.postDelayed(resetServerR, Globals.RESET_SERVER_DELAY);
-				break;
 			case 1:
 				// say("Continue driving along the default route.");
 				experimentNumber++;
@@ -256,32 +167,28 @@ public class MainActivity extends Activity implements OnInitListener {
 				myHandler.postDelayed(resetServerR, Globals.RESET_SERVER_DELAY);
 				break;
 			case 6:
-				// say("Continue driving along the default route.");
-				experimentNumber++;
-				myHandler.postDelayed(resetServerR, Globals.RESET_SERVER_DELAY);
-				break;
-			case 7:
 				say("Please go to Vassar Street and loop back and forth, making U turns as necessary.");
 				experimentNumber++;
 				myHandler.postDelayed(resetServerR, Globals.RESET_SERVER_DELAY);
 				break;
+			case 7:
+				//say("Please go to Vassar Street and loop back and forth, making U turns as necessary.");
+				experimentNumber++;
+				myHandler.postDelayed(resetServerR, Globals.RESET_SERVER_DELAY);
+				break;
 			case 8:
-				if (firstSet) {
-					log("##### BANANA TIME");
-					logWriter.flush();
-					say("Banana time. Banana time. Please follow the instructions on the flyer for banana time.");
-				} else {
-					say("Experiments complete. Please return or park your vehicle and bring this phone back to the Stata Center.");
-				}
+				say("Experiments complete. Please return to the starting point.");
+				experimentNumber++;
+				//myHandler.postDelayed(resetServerR, Globals.RESET_SERVER_DELAY);
 				break;
 			default:
 				break;
 			}
 		}
 	};
-
+	
 	/** Reset the server in the interlude between experiments. */
-	private Runnable resetServerR_old = new Runnable() {
+	private Runnable resetServerR = new Runnable() {
 		public void run() {
 			log("------ SERVER RESET ------");
 			if (mService != null) {
@@ -292,66 +199,58 @@ public class MainActivity extends Activity implements OnInitListener {
 			myHandler.postDelayed(startExperimentR, Globals.EXPT_START_DELAY);
 		}
 	};
-
-	// Cloud-only experiment
+	
 	private Runnable startExperimentR = new Runnable() {
 		public void run() {
 			startExperimentNum();
 		}
 	};
 
-	private void startExperimentNum_old() {
+	/*** Nov 30 2012 */
+	private void startExperimentNum() {
 		log(String.format("------ STARTING EXPERIMENT %d ------",
 				experimentNumber));
 		say(String.format("Starting experiment %d.", experimentNumber));
 
 		switch (experimentNumber) {
 		case 0:
-			// DEP: Go to endExperimentR for setup
-			experimentNumber++;
-
-			// Wait until 10:20am to start first experiment
-			if (firstSet) {
-				long timeUntilFirstExperiment = Globals.START_TIME_1
-						- System.currentTimeMillis();
-				log(String.format("%d - %d = %d msecs until 10:20AM",
-						Globals.START_TIME_1, System.currentTimeMillis(),
-						timeUntilFirstExperiment));
-				myHandler.postDelayed(resetServerR, timeUntilFirstExperiment);
-				say(String.format("Synchronizing in %5d minutes.",
-						(int) (timeUntilFirstExperiment / 1000 / 60)));
-			} else { // wait until 11:35 am to start second set
-				long timeUntilSecondExperiment = Globals.START_TIME_2
-						- System.currentTimeMillis();
-				log(String.format("%d - %d = %d msecs until 11:35AM",
-						Globals.START_TIME_2, System.currentTimeMillis(),
-						timeUntilSecondExperiment));
-				myHandler.postDelayed(resetServerR, timeUntilSecondExperiment);
-				say(String.format("Synchronizing in %5d minutes.",
-						(int) (timeUntilSecondExperiment / 1000 / 60)));
-			}
+			experimentNumber++; // bootstrap because endR doesn't run
+			// wait until start time
+			long timeUntilStart = Globals.START_TIME
+					- System.currentTimeMillis();
+			log(String.format("%d - %d = %d msecs until the start time.",
+					Globals.START_TIME, System.currentTimeMillis(),
+					timeUntilStart));
+			myHandler.postDelayed(resetServerR, timeUntilStart);
+			say(String.format("Synchronizing in %d minutes and %d seconds",
+					(int) (timeUntilStart / 1000 / 60), (int) ((timeUntilStart / 1000) % 60)));
 			break;
+
 		case 1:
-			// Adhoc OFF, 4G Cloud-only, Trial 1
-			// say("WiFi off. Cloud only. Trial 1.");
-			Globals.REQUEST_DIRECT_PUT_DEADLINE_FROM_NOW = 2000;
-			Globals.REQUEST_DIRECT_GET_DEADLINE_FROM_NOW = 2000;
+			// Adhoc OFF, CLOUD Trial 1/2
+			Globals.NAV_REQUESTS = true;
+			Globals.NAV_SPEECH = true;
+			Globals.SUPER_DENSE_REQUESTS = false;
+			Globals.REQUEST_DIRECT_PUT_DEADLINE_FROM_NOW = 2 * 1000;
+			Globals.REQUEST_DIRECT_GET_DEADLINE_FROM_NOW = 2 * 1000;
 			((CheckBox) findViewById(R.id.adhoc_checkbox)).setChecked(false);
 			((CheckBox) findViewById(R.id.ondemand_checkbox)).setChecked(false);
 			doBindService();
-			say("Exit the starting area and turn onto Vassar Street.");
+			say("Exit the starting area and turn onto Vassar Street. Begin driving along your assigned route.");
 			// say("Exit the parking lot and turn right onto Main Street.");
 
 			// End the experiment after a while
 			myHandler.postDelayed(endExperimentR, Globals.EXPT_LENGTH);
 			break;
 		case 2:
-			// Adhoc OFF, 4G Cloud-only, Trial 2
-			// say("WiFi off. Cloud only. Trial 2.");
-			Globals.REQUEST_DIRECT_PUT_DEADLINE_FROM_NOW = 2000;
-			Globals.REQUEST_DIRECT_GET_DEADLINE_FROM_NOW = 2000;
-			((CheckBox) findViewById(R.id.adhoc_checkbox)).setChecked(false);
-			((CheckBox) findViewById(R.id.ondemand_checkbox)).setChecked(false);
+			// Adhoc ON, ONDEMAND Trial 1
+			Globals.NAV_REQUESTS = true;
+			Globals.NAV_SPEECH = true;
+			Globals.SUPER_DENSE_REQUESTS = false;
+			Globals.REQUEST_DIRECT_PUT_DEADLINE_FROM_NOW = 10 * 1000;
+			Globals.REQUEST_DIRECT_GET_DEADLINE_FROM_NOW = 10 * 1000;
+			((CheckBox) findViewById(R.id.adhoc_checkbox)).setChecked(true);
+			((CheckBox) findViewById(R.id.ondemand_checkbox)).setChecked(true);
 			doBindService();
 			say("Continue driving along the default route.");
 
@@ -359,10 +258,12 @@ public class MainActivity extends Activity implements OnInitListener {
 			myHandler.postDelayed(endExperimentR, Globals.EXPT_LENGTH);
 			break;
 		case 3:
-			// Adhoc ON, PRERESERVE Tokens, Trial 1
-			// say("WiFi on. Pre-reserved tokens. Trial 1.");
-			Globals.REQUEST_DIRECT_PUT_DEADLINE_FROM_NOW = 60000;
-			Globals.REQUEST_DIRECT_GET_DEADLINE_FROM_NOW = 30000;
+			// Adhoc ON, PRERESERVE Trial 1
+			Globals.NAV_REQUESTS = true;
+			Globals.NAV_SPEECH = true;
+			Globals.SUPER_DENSE_REQUESTS = false;
+			Globals.REQUEST_DIRECT_PUT_DEADLINE_FROM_NOW = 60 * 1000;
+			Globals.REQUEST_DIRECT_GET_DEADLINE_FROM_NOW = 30 * 1000;
 			((CheckBox) findViewById(R.id.adhoc_checkbox)).setChecked(true);
 			((CheckBox) findViewById(R.id.ondemand_checkbox)).setChecked(false);
 			doBindService();
@@ -372,10 +273,27 @@ public class MainActivity extends Activity implements OnInitListener {
 			myHandler.postDelayed(endExperimentR, Globals.EXPT_LENGTH);
 			break;
 		case 4:
-			// Adhoc ON, PRERESERVE Tokens, Trial 2
-			// say("WiFi on. Pre-reserved tokens. Trial 2.");
-			Globals.REQUEST_DIRECT_PUT_DEADLINE_FROM_NOW = 60000;
-			Globals.REQUEST_DIRECT_GET_DEADLINE_FROM_NOW = 30000;
+			// Adhoc ON, ONDEMAND Trial 1
+			Globals.NAV_REQUESTS = true;
+			Globals.NAV_SPEECH = true;
+			Globals.SUPER_DENSE_REQUESTS = false;
+			Globals.REQUEST_DIRECT_PUT_DEADLINE_FROM_NOW = 10 * 1000;
+			Globals.REQUEST_DIRECT_GET_DEADLINE_FROM_NOW = 10 * 1000;
+			((CheckBox) findViewById(R.id.adhoc_checkbox)).setChecked(true);
+			((CheckBox) findViewById(R.id.ondemand_checkbox)).setChecked(true);
+			doBindService();
+			say("Continue driving along the default route.");
+
+			// End the experiment after a while
+			myHandler.postDelayed(endExperimentR, Globals.EXPT_LENGTH);
+			break;
+		case 5:
+			// Adhoc ON, PRERESERVE Trial 1
+			Globals.NAV_REQUESTS = true;
+			Globals.NAV_SPEECH = true;
+			Globals.SUPER_DENSE_REQUESTS = false;
+			Globals.REQUEST_DIRECT_PUT_DEADLINE_FROM_NOW = 60 * 1000;
+			Globals.REQUEST_DIRECT_GET_DEADLINE_FROM_NOW = 30 * 1000;
 			((CheckBox) findViewById(R.id.adhoc_checkbox)).setChecked(true);
 			((CheckBox) findViewById(R.id.ondemand_checkbox)).setChecked(false);
 			doBindService();
@@ -384,35 +302,26 @@ public class MainActivity extends Activity implements OnInitListener {
 			// End the experiment after a while
 			myHandler.postDelayed(endExperimentR, Globals.EXPT_LENGTH);
 			break;
-		case 5:
-			// Adhoc ON, ONDEMAND Tokens, Trial 1
-			// say("WiFi on. On-demand tokens. Trial 1.");
-			Globals.REQUEST_DIRECT_PUT_DEADLINE_FROM_NOW = 10000;
-			Globals.REQUEST_DIRECT_GET_DEADLINE_FROM_NOW = 10000;
-			((CheckBox) findViewById(R.id.adhoc_checkbox)).setChecked(true);
-			((CheckBox) findViewById(R.id.ondemand_checkbox)).setChecked(true);
-			doBindService();
-			say("Continue driving along the default route.");
-
-			// End the experiment after a while
-			myHandler.postDelayed(endExperimentR, Globals.EXPT_LENGTH);
-			break;
 		case 6:
-			// Adhoc ON, ONDEMAND Tokens, Trial 2
-			// say("WiFi on. On-demand tokens. Trial 2.");
-			Globals.REQUEST_DIRECT_PUT_DEADLINE_FROM_NOW = 10000;
-			Globals.REQUEST_DIRECT_GET_DEADLINE_FROM_NOW = 10000;
+			// Adhoc ON, SUPERDENSE Tokens, Trial 1
+			Globals.NAV_REQUESTS = false;
+			Globals.NAV_SPEECH = false;
+			Globals.SUPER_DENSE_REQUESTS = true;
+			Globals.REQUEST_DIRECT_PUT_DEADLINE_FROM_NOW = 10 * 60 * 1000;
+			Globals.REQUEST_DIRECT_GET_DEADLINE_FROM_NOW = 10 * 60 * 1000;
 			((CheckBox) findViewById(R.id.adhoc_checkbox)).setChecked(true);
 			((CheckBox) findViewById(R.id.ondemand_checkbox)).setChecked(true);
 			doBindService();
-			say("Continue driving along the default route.");
+			say("Drive back and forth on Vassar Street, making U turns as necessary.");
 
 			// End the experiment after a while
 			myHandler.postDelayed(endExperimentR, Globals.EXPT_LENGTH);
 			break;
 		case 7:
-			// Adhoc ON, SUPERDENSE Tokens, Trial 1
-			// say("WiFi on. Super dense tokens. Trial 1.");
+			// Adhoc ON, SUPERDENSE Tokens, Trial 2
+			Globals.NAV_REQUESTS = false;
+			Globals.NAV_SPEECH = false;
+			Globals.SUPER_DENSE_REQUESTS = true;
 			Globals.REQUEST_DIRECT_PUT_DEADLINE_FROM_NOW = 10 * 60 * 1000;
 			Globals.REQUEST_DIRECT_GET_DEADLINE_FROM_NOW = 10 * 60 * 1000;
 			((CheckBox) findViewById(R.id.adhoc_checkbox)).setChecked(true);
@@ -424,13 +333,8 @@ public class MainActivity extends Activity implements OnInitListener {
 			myHandler.postDelayed(endExperimentR, Globals.EXPT_LENGTH);
 			break;
 		case 8:
-			if (firstSet) {
-				log("##### BANANA TIME");
-				logWriter.flush();
-				say("Banana time. Banana time. Please follow the instructions on the flyer for banana time.");
-			} else {
-				say("Experiments complete. Please return or park your vehicle and bring this phone back to the Stata Center.");
-			}
+			logWriter.flush();
+			say("Experiments complete. Please return to the starting point.");
 			break;
 		default:
 			// say("No experiments left to do. Please return to the starting point.");
@@ -458,10 +362,12 @@ public class MainActivity extends Activity implements OnInitListener {
 				Globals.ADHOC_IFACE_NAME = isDSRC ? "usb0" : "eth0";
 				Globals.ADHOC_SEND_PORT = isDSRC ? 4200 : 4200;
 				Globals.ADHOC_RECV_PORT = isDSRC ? 5001 : 4200;
-				log(String.format(
-						"selected interface %s, send port %d, recv port %d",
-						Globals.ADHOC_IFACE_NAME, Globals.ADHOC_SEND_PORT,
-						Globals.ADHOC_RECV_PORT));
+				Globals.CLOUD_PORT = isDSRC ? 50000 : 50001;
+				log(String
+						.format("selected interface %s, send port %d, recv port %d, cloud port %d",
+								Globals.ADHOC_IFACE_NAME,
+								Globals.ADHOC_SEND_PORT,
+								Globals.ADHOC_RECV_PORT, Globals.CLOUD_PORT));
 			}
 		});
 
@@ -601,7 +507,7 @@ public class MainActivity extends Activity implements OnInitListener {
 		// Disable under Gingerbread / Saurom, broken...
 		if (true)
 			return;
-		
+
 		Process process = Runtime.getRuntime().exec("su");
 		DataOutputStream os = new DataOutputStream(process.getOutputStream());
 
@@ -632,7 +538,7 @@ public class MainActivity extends Activity implements OnInitListener {
 	private final OnClickListener mClicked = new OnClickListener() {
 		public void onClick(View v) {
 			switch (v.getId()) {
-			
+
 			case R.id.ipv4_button:
 				EditText ipv4AddressTV = (EditText) findViewById(R.id.ipv4_editText);
 
@@ -682,7 +588,8 @@ public class MainActivity extends Activity implements OnInitListener {
 				 */
 
 				if (Globals.EXPT_DEBUG) {
-					Globals.EXPT_LENGTH = 1 * 60 * 1000;
+					Globals.EXPT_LENGTH = 30 * 1000;
+					Globals.START_TIME = getTime() + 10*1000;
 				}
 
 				log(String.format("Globals.EXPT_LENGTH = %d",
@@ -715,16 +622,16 @@ public class MainActivity extends Activity implements OnInitListener {
 					mService.resetCloud();
 				}
 				break;
-				
+
 			case R.id.debug_offer_button:
 				if (mBound) {
-					mService.makeOfferRouteVassar();
-				}				
+					mService.makeOfferRouteStata();
+				}
 				break;
-			
+
 			case R.id.debug_request_button:
 				if (mBound) {
-					mService.makeReservationRouteVassar();
+					mService.makeReservationRouteStata();
 				}
 				break;
 
