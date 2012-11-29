@@ -9,9 +9,9 @@ public class Globals {
 	
 	/** Now set in MainActivity.onCreate() */
 	static String ADHOC_IFACE_NAME = "eth0"; // default to adhoc wifi
-	static int ADHOC_RECV_PORT = 4200; // set send and recv port same for adhoc WiFi
+	static int ADHOC_RECV_PORT = 4200; // note: set send and recv port same for adhoc WiFi
 	static int ADHOC_SEND_PORT = 4200;
-	static int CLOUD_PORT = 50000; // 50001 for wifi, 50000 for dsrc
+	static int CLOUD_PORT = 50000; // 50000 for wifi, 50001 for dsrc
 	
 	/** Cloud parameters */
 	static final String CLOUD_HOST = "128.30.87.68";
@@ -40,6 +40,6 @@ public class Globals {
 	static long EXPT_START_DELAY = 1 * 15 * 1000;
 	static long RESET_SERVER_DELAY = 1 * 15 * 1000;
 	static long EXPT_LENGTH = 10 * 60 * 1000; // TODO now set in MainActivity
-	static final boolean EXPT_DEBUG = true; // short 1 minute expts for test
-	static long START_TIME = 1354161600L * 1000L; // GMT-4
+	static boolean EXPT_DEBUG = false; // short 1 minute expts for test
+	static long START_TIME = 1354294800L * 1000L; // GMT-4 (sub 1 hr for DST)
 }

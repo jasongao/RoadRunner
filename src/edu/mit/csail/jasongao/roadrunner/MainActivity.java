@@ -172,21 +172,22 @@ public class MainActivity extends Activity implements OnInitListener {
 				myHandler.postDelayed(resetServerR, Globals.RESET_SERVER_DELAY);
 				break;
 			case 7:
-				//say("Please go to Vassar Street and loop back and forth, making U turns as necessary.");
+				// say("Please go to Vassar Street and loop back and forth, making U turns as necessary.");
 				experimentNumber++;
 				myHandler.postDelayed(resetServerR, Globals.RESET_SERVER_DELAY);
 				break;
 			case 8:
 				say("Experiments complete. Please return to the starting point.");
 				experimentNumber++;
-				//myHandler.postDelayed(resetServerR, Globals.RESET_SERVER_DELAY);
+				// myHandler.postDelayed(resetServerR,
+				// Globals.RESET_SERVER_DELAY);
 				break;
 			default:
 				break;
 			}
 		}
 	};
-	
+
 	/** Reset the server in the interlude between experiments. */
 	private Runnable resetServerR = new Runnable() {
 		public void run() {
@@ -199,7 +200,7 @@ public class MainActivity extends Activity implements OnInitListener {
 			myHandler.postDelayed(startExperimentR, Globals.EXPT_START_DELAY);
 		}
 	};
-	
+
 	private Runnable startExperimentR = new Runnable() {
 		public void run() {
 			startExperimentNum();
@@ -223,7 +224,8 @@ public class MainActivity extends Activity implements OnInitListener {
 					timeUntilStart));
 			myHandler.postDelayed(resetServerR, timeUntilStart);
 			say(String.format("Synchronizing in %d minutes and %d seconds",
-					(int) (timeUntilStart / 1000 / 60), (int) ((timeUntilStart / 1000) % 60)));
+					(int) (timeUntilStart / 1000 / 60),
+					(int) ((timeUntilStart / 1000) % 60)));
 			break;
 
 		case 1:
@@ -362,12 +364,21 @@ public class MainActivity extends Activity implements OnInitListener {
 				Globals.ADHOC_IFACE_NAME = isDSRC ? "usb0" : "eth0";
 				Globals.ADHOC_SEND_PORT = isDSRC ? 4200 : 4200;
 				Globals.ADHOC_RECV_PORT = isDSRC ? 5001 : 4200;
-				Globals.CLOUD_PORT = isDSRC ? 50000 : 50001;
+				Globals.CLOUD_PORT = isDSRC ? 50001 : 50000;
 				log(String
 						.format("selected interface %s, send port %d, recv port %d, cloud port %d",
 								Globals.ADHOC_IFACE_NAME,
 								Globals.ADHOC_SEND_PORT,
 								Globals.ADHOC_RECV_PORT, Globals.CLOUD_PORT));
+			}
+		});
+
+		// Toggle for debug start time
+		CheckBox exptDebugBox = (CheckBox) findViewById(R.id.debug_start_time_checkbox);
+		exptDebugBox.setOnCheckedChangeListener(new OnCheckedChangeListener() {
+			public void onCheckedChanged(CompoundButton buttonView,
+					boolean isDebugStartTime) {
+				Globals.EXPT_DEBUG = isDebugStartTime;
 			}
 		});
 
@@ -589,7 +600,7 @@ public class MainActivity extends Activity implements OnInitListener {
 
 				if (Globals.EXPT_DEBUG) {
 					Globals.EXPT_LENGTH = 30 * 1000;
-					Globals.START_TIME = getTime() + 10*1000;
+					Globals.START_TIME = getTime() + 10 * 1000;
 				}
 
 				log(String.format("Globals.EXPT_LENGTH = %d",

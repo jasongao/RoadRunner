@@ -1047,7 +1047,11 @@ public class RoadRunnerService extends Service implements LocationListener {
 		// say("Service started.");
 
 		// Set up regions
-		this.regions = experimentARegions();
+		if (Globals.NAV_REQUESTS) {
+			this.regions = experimentFullRegions();
+		} else {
+			this.regions = experimentSuperDenseRegions();
+		}
 
 		// Initialize state
 		this.reservationsInUse = new ConcurrentHashMap<String, ResRequest>();
@@ -1146,7 +1150,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 	}
 
 	/** Test regions in Stata courtyard */
-	private List<Region> experimentARegions() {
+	private List<Region> experimentSuperDenseRegions() {
 		List<Region> rs = new ArrayList<Region>();
 		Region r;
 
@@ -1170,7 +1174,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 	}
 
 	/** Regions in experiment A */
-	private List<Region> experimentARegions_old() {
+	private List<Region> experimentFullRegions() {
 		List<Region> rs = new ArrayList<Region>();
 		Region r;
 
