@@ -37,9 +37,12 @@ public class Globals {
 	static boolean SUPER_DENSE_REQUESTS = false; // for super-dense test
 
 	/** Experiment automation */
-	static long EXPT_START_DELAY = 1 * 15 * 1000;
-	static long RESET_SERVER_DELAY = 1 * 15 * 1000;
-	static long EXPT_LENGTH = 10 * 60 * 1000; // TODO now set in MainActivity
-	static boolean EXPT_DEBUG = false; // short 1 minute expts for test
+	static final long EXPT_START_DELAY = 1 * 15 * 1000;
+	static final long RESET_SERVER_DELAY = 1 * 15 * 1000;
+
 	static long START_TIME = 1354294800L * 1000L; // GMT-4 (sub 1 hr for DST)
+	static long EXPT_LENGTH = 10 * 60 * 1000; // now set in MainActivity 
+	
+	static final long START_TIME_FULL = 1354294800L * 1000L; // GMT-4 (sub 1 hr for DST)
+	static final long EXPT_LENGTH_FULL = 10 * 60 * 1000;
 }

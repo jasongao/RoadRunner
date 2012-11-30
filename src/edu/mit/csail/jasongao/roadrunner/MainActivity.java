@@ -142,32 +142,32 @@ public class MainActivity extends Activity implements OnInitListener {
 			// experiment experimentNumber ended.
 			switch (experimentNumber) {
 			case 1:
-				// say("Continue driving along the default route.");
+				say("Preparing next experiment. Continue driving along the default route.");
 				experimentNumber++;
 				myHandler.postDelayed(resetServerR, Globals.RESET_SERVER_DELAY);
 				break;
 			case 2:
-				// say("Continue driving along the default route.");
+				say("Preparing next experiment. Continue driving along the default route.");
 				experimentNumber++;
 				myHandler.postDelayed(resetServerR, Globals.RESET_SERVER_DELAY);
 				break;
 			case 3:
-				// say("Continue driving along the default route.");
+				say("Preparing next experiment. Continue driving along the default route.");
 				experimentNumber++;
 				myHandler.postDelayed(resetServerR, Globals.RESET_SERVER_DELAY);
 				break;
 			case 4:
-				// say("Continue driving along the default route.");
+				say("Preparing next experiment. Continue driving along the default route.");
 				experimentNumber++;
 				myHandler.postDelayed(resetServerR, Globals.RESET_SERVER_DELAY);
 				break;
 			case 5:
-				// say("Continue driving along the default route.");
+				say("Preparing next experiment. Continue driving along the default route.");
 				experimentNumber++;
 				myHandler.postDelayed(resetServerR, Globals.RESET_SERVER_DELAY);
 				break;
 			case 6:
-				say("Please go to Vassar Street and loop back and forth, making U turns as necessary.");
+				say("Banana time. Banana time. Please go to Vassar Street and loop back and forth, making U turns as necessary.");
 				experimentNumber++;
 				myHandler.postDelayed(resetServerR, Globals.RESET_SERVER_DELAY);
 				break;
@@ -329,14 +329,14 @@ public class MainActivity extends Activity implements OnInitListener {
 			((CheckBox) findViewById(R.id.adhoc_checkbox)).setChecked(true);
 			((CheckBox) findViewById(R.id.ondemand_checkbox)).setChecked(true);
 			doBindService();
-			say("Drive back and forth on Vassar Street, making U turns as necessary.");
+			//say("Drive back and forth on Vassar Street, making U turns as necessary.");
 
 			// End the experiment after a while
 			myHandler.postDelayed(endExperimentR, Globals.EXPT_LENGTH);
 			break;
 		case 8:
 			logWriter.flush();
-			say("Experiments complete. Please return to the starting point.");
+			say("All experiments complete. All experiments complete. Please return to the starting point. Thank you for your participation.");
 			break;
 		default:
 			// say("No experiments left to do. Please return to the starting point.");
@@ -373,12 +373,13 @@ public class MainActivity extends Activity implements OnInitListener {
 			}
 		});
 
-		// Toggle for debug start time
+		// Toggle for quick debugging experiments automation
 		CheckBox exptDebugBox = (CheckBox) findViewById(R.id.debug_start_time_checkbox);
 		exptDebugBox.setOnCheckedChangeListener(new OnCheckedChangeListener() {
 			public void onCheckedChanged(CompoundButton buttonView,
 					boolean isDebugStartTime) {
-				Globals.EXPT_DEBUG = isDebugStartTime;
+				Globals.EXPT_LENGTH = isDebugStartTime ? (30 * 1000) : Globals.EXPT_LENGTH_FULL;
+				Globals.START_TIME = isDebugStartTime ? getTime() + 10 * 1000 : Globals.START_TIME_FULL;
 			}
 		});
 
@@ -592,16 +593,6 @@ public class MainActivity extends Activity implements OnInitListener {
 				myHandler.removeCallbacks(resetServerR);
 				CheckBox firstSetCheckbox = (CheckBox) findViewById(R.id.firstset_checkbox);
 				firstSet = firstSetCheckbox.isChecked();
-				/*
-				 * if (firstSet) { Globals.EXPT_LENGTH = 10 * 60 * 1000; // 10
-				 * min } else { Globals.EXPT_LENGTH = 5 * 60 * 1000; // 5 min }
-				 * }
-				 */
-
-				if (Globals.EXPT_DEBUG) {
-					Globals.EXPT_LENGTH = 30 * 1000;
-					Globals.START_TIME = getTime() + 10 * 1000;
-				}
 
 				log(String.format("Globals.EXPT_LENGTH = %d",
 						Globals.EXPT_LENGTH));

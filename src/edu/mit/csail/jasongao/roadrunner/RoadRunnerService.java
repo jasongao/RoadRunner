@@ -151,9 +151,14 @@ public class RoadRunnerService extends Service implements LocationListener {
 					adhocAnnounce(false);
 				}
 
-				// if (!linkIsViableWiFi(mLoc, other)) {
-				if (!linkIsViableDSRC(mLoc, other)) {
-					break;
+				if (Globals.ADHOC_IFACE_NAME.equals("eth0")) {
+					if (!linkIsViableWiFi(mLoc, other)) {
+						break;
+					}
+				} else {
+					if (!linkIsViableDSRC(mLoc, other)) {
+						break;
+					}
 				}
 
 				if (other.type == AdhocPacket.TOKEN_REQUEST) {
@@ -426,6 +431,35 @@ public class RoadRunnerService extends Service implements LocationListener {
 	}
 
 	/**
+	 * Determine whether two vehicle's location fixes indicate that a DSRC UDP
+	 * link is viable for a token transfer / other communications
+	 * 
+	 * @param v1
+	 *            Location of vehicle 1
+	 * @param v2
+	 *            Location of vehicle 2
+	 * @return true is the link is viable, false if not
+	 */
+	private boolean linkIsViableWiFi(Location v1, AdhocPacket other) {
+		Location v2 = other.getLocation();
+
+		if (v1 == null || v2 == null) {
+			log_nodisplay("Link not viable: GPS disabled");
+			return false;
+		}
+
+		float distance = v1.distanceTo(v2);
+		long threshold = 70;
+		boolean viable = (distance < threshold);
+
+		log_nodisplay(String.format(
+				"Link %s: %.1f meters apart (threshold %d). v1=%s v2=%s",
+				viable ? "viable" : "not viable", distance, threshold, v1, v2));
+
+		return viable;
+	}
+
+	/**
 	 * Determine whether two vehicle's location fixes indicate that a WiFi TCP
 	 * link can be sustained over the next Globals.LINK_LIFETIME_THRESHOLD secs
 	 * 
@@ -435,7 +469,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 	 *            Location of vehicle 2
 	 * @return true is the link is viable, false if not
 	 */
-	private boolean linkIsViableWiFi(Location v1, AdhocPacket other) {
+	private boolean linkIsViableWiFiComplex(Location v1, AdhocPacket other) {
 		Location v2 = other.getLocation();
 
 		if (v1 == null || v2 == null) {
@@ -898,7 +932,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 	/*** DEBUG make a fake offer to test token transfers */
 	public void makeOfferRouteStata() {
 		log(String.format("Making DEBUG Offer for Vassar-1"));
-		
+
 		ResRequest res = new ResRequest(mId, ResRequest.RES_GET, "Stata-1");
 		res = new ResRequest(mId, ResRequest.RES_GET, "Stata-1");
 		res.done = true;
@@ -906,7 +940,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 		res.tokenString = "DEBUG";
 		res.signature = "DEBUG";
 		res.issued = getTime();
-		res.expires = getTime() + 30*60*1000;
+		res.expires = getTime() + 30 * 60 * 1000;
 		res.hardDeadline = res.completed
 				+ Globals.REQUEST_DIRECT_PUT_DEADLINE_FROM_NOW;
 		this.offers.add(res);
@@ -1149,7 +1183,7 @@ public class RoadRunnerService extends Service implements LocationListener {
 		return rs;
 	}
 
-	/** Test regions in Stata courtyard */
+	/** Regions for super-dense experiment on Vassar Street */
 	private List<Region> experimentSuperDenseRegions() {
 		List<Region> rs = new ArrayList<Region>();
 		Region r;
@@ -1477,14 +1511,16 @@ public class RoadRunnerService extends Service implements LocationListener {
 
 	public void regionTransition(String oldRegion, String newRegion) {
 		this.mRegion = newRegion;
-		
+
 		// Log whether old reservation was a penalty reservation or not
 		if (this.reservationsInUse.containsKey(oldRegion)) {
 			ResRequest oldRes = this.reservationsInUse.get(oldRegion);
 			if (oldRes.type == ResRequest.PENALTY) {
-				log(String.format("exited region %s with PENALTY reservation", oldRegion));
+				log(String.format("exited region %s with PENALTY reservation",
+						oldRegion));
 			} else {
-				log(String.format("exited region %s with VALID reservation", oldRegion));
+				log(String.format("exited region %s with VALID reservation",
+						oldRegion));
 			}
 		}
 
