@@ -162,25 +162,20 @@ public class MainActivity extends Activity implements OnInitListener {
 				myHandler.postDelayed(resetServerR, Globals.RESET_SERVER_DELAY);
 				break;
 			case 5:
-				say("Preparing next experiment. Continue driving along the default route.");
-				experimentNumber++;
-				myHandler.postDelayed(resetServerR, Globals.RESET_SERVER_DELAY);
-				break;
-			case 6:
 				say("Banana time. Banana time. Please go to Vassar Street and loop back and forth, making U turns as necessary.");
 				experimentNumber++;
 				myHandler.postDelayed(resetServerR, Globals.RESET_SERVER_DELAY);
 				break;
-			case 7:
-				// say("Please go to Vassar Street and loop back and forth, making U turns as necessary.");
+			case 6:
+				say("Preparing next experiment. Continue looping on Vassar Street.");
 				experimentNumber++;
 				myHandler.postDelayed(resetServerR, Globals.RESET_SERVER_DELAY);
 				break;
-			case 8:
-				say("Experiments complete. Please return to the starting point.");
+			case 7:
+				logWriter.flush();
+				say("All experiments complete. All experiments complete. Please return to the starting point. Thank you for your participation, human.");
 				experimentNumber++;
-				// myHandler.postDelayed(resetServerR,
-				// Globals.RESET_SERVER_DELAY);
+				myHandler.postDelayed(resetServerR, Globals.RESET_SERVER_DELAY);
 				break;
 			default:
 				break;
@@ -334,11 +329,8 @@ public class MainActivity extends Activity implements OnInitListener {
 			// End the experiment after a while
 			myHandler.postDelayed(endExperimentR, Globals.EXPT_LENGTH);
 			break;
-		case 8:
-			logWriter.flush();
-			say("All experiments complete. All experiments complete. Please return to the starting point. Thank you for your participation.");
-			break;
 		default:
+			logWriter.flush();
 			// say("No experiments left to do. Please return to the starting point.");
 			break;
 		}
